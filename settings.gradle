@@ -1,0 +1,4 @@
+include ':ipc-extend-test'
+include ':ipc-core'
+include ':ipc-app-test'
+rootProject.name = "android-ipc"
