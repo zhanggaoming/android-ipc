@@ -19,7 +19,7 @@ object MemoryFileUtil {
     private val memoryFileMemberMap by lazy {
         MemoryFile::class.java.declaredFields.filter {
             it.name in listOf(
-                "mFD", "mLength", "mAddress", "mSharedMemory", "mMapping"
+                "mFD", "mLength", "mAddress"
             )
         }.map {
             it.isAccessible = true
@@ -63,23 +63,23 @@ object MemoryFileUtil {
     } else throw IllegalStateException("SDK_INT >= VERSION_CODES.O_MR1 is illegal!")
 
 
-    fun createMemoryFile(sharedMemory: SharedMemory, openMode: MemoryFileOpenMode) =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) MemoryFile("tem", 1).apply {
-
-            close()
-
-            memoryFileMemberMap["mSharedMemory"]!!.set(this, sharedMemory)
-            memoryFileMemberMap["mMapping"]!!.set(
-                this, if (openMode == MemoryFileOpenMode.MODE_READ) {
-
-                    sharedMemory.mapReadOnly()
-
-                } else {
-                    sharedMemory.mapReadWrite()
-                }
-            )
-
-        } else throw IllegalAccessException("SDK_INT < VERSION_CODES.O_MR1 is illegal!")
+//    fun createMemoryFile(sharedMemory: SharedMemory, openMode: MemoryFileOpenMode) =
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) MemoryFile("tem", 1).apply {
+//
+//            close()
+//
+//            memoryFileMemberMap["mSharedMemory"]!!.set(this, sharedMemory)
+//            memoryFileMemberMap["mMapping"]!!.set(
+//                this, if (openMode == MemoryFileOpenMode.MODE_READ) {
+//
+//                    sharedMemory.mapReadOnly()
+//
+//                } else {
+//                    sharedMemory.mapReadWrite()
+//                }
+//            )
+//
+//        } else throw IllegalAccessException("SDK_INT < VERSION_CODES.O_MR1 is illegal!")
 
 
 }

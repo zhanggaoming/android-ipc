@@ -1,6 +1,7 @@
 package com.ipc.extend.test
 
-import com.zclever.ipc.core.BindImpl
+
+import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.Result
 
 @BindImpl("com.demo.ipc.InfoServiceManager")

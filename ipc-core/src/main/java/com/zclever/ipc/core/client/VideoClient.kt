@@ -7,11 +7,9 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.os.MemoryFile
+import android.os.SharedMemory
 import android.util.Log
-import com.zclever.ipc.core.FRAME_DATA_LENGTH
-import com.zclever.ipc.core.IpcManager
-import com.zclever.ipc.core.PICTURE_DATA_LENGTH
-import com.zclever.ipc.core.TAG
+import com.zclever.ipc.core.*
 import com.zclever.ipc.core.memoryfile.MemoryFileOpenMode
 import com.zclever.ipc.core.memoryfile.MemoryFileUtil
 import com.zclever.ipc.core.server.VideoCenter
@@ -40,6 +38,10 @@ internal object VideoClient : IMediaManager, ServiceConnection {
     private var pictureMemoryFile: MemoryFile? = null
 
     private var previewMemoryFile: MemoryFile? = null
+
+    private var pictureSharedMemory: SharedMemory? = null
+
+    private var previewSharedMemory: SharedMemory? = null
 
     override fun takeFrame(frameType: FrameType) {
         //取帧接口
@@ -75,14 +77,22 @@ internal object VideoClient : IMediaManager, ServiceConnection {
         override fun onData(
             width: Int, height: Int, size: Int, format: Int
         ) {
-            previewMemoryFile?.inputStream!!.use { inputStream ->
-                ByteArray(size).also { inputStream.read(it) }
+
+            ByteArray(size).also {
+                previewMemoryFile?.also { memoryFile ->
+
+                    memoryFile.inputStream.use { inputStream ->
+                        inputStream.read(it)
+                    }
+
+                } ?: previewSharedMemory!!.mapReadOnly().let { byteBuffer ->
+                    byteBuffer.get(it)
+                }
             }.let {
                 previewCallBack?.onPreviewFrame(
                     it, width, height, if (format == 1) FrameType.NV21 else FrameType.H264
                 )
             }
-
         }
 
     }
@@ -92,8 +102,17 @@ internal object VideoClient : IMediaManager, ServiceConnection {
             width: Int, height: Int, size: Int, format: Int
         ) {
 
-            pictureMemoryFile?.inputStream!!.use { inputStream ->
-                ByteArray(size).also { inputStream.read(it) }
+
+            ByteArray(size).also {
+                pictureMemoryFile?.also { memoryFile ->
+
+                    memoryFile.inputStream.use { inputStream ->
+                        inputStream.read(it)
+                    }
+
+                } ?: pictureSharedMemory!!.mapReadOnly().let { byteBuffer ->
+                    byteBuffer.get(it)
+                }
             }.let {
                 pictureCallBack?.onPictureTaken(
                     it, width, height, if (format == 1) PictureFormat.JPEG else PictureFormat.PNG
@@ -106,30 +125,25 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
 
-        Log.i(TAG, "onServiceConnected: ->MediaClient")
+        debugI("onServiceConnected: ->MediaClient")
 
         connector = IMediaConnector.Stub.asInterface(service)
 
-        if (IpcManager.useSharedMemory) {
+        if (!IpcManager.useSharedMemory) {
 
-            pictureMemoryFile = MemoryFileUtil.createMemoryFile(
-                connector.obtainPictureSharedMemory(), MemoryFileOpenMode.MODE_READ
+            pictureMemoryFile = MemoryFileUtil.openMemoryFile(
+                connector.obtainPictureFd(), PICTURE_DATA_LENGTH,MemoryFileOpenMode.MODE_READ
             )
 
-            previewMemoryFile = MemoryFileUtil.createMemoryFile(
-                connector.obtainFrameSharedMemory(), MemoryFileOpenMode.MODE_READ
+            previewMemoryFile = MemoryFileUtil.openMemoryFile(
+                connector.obtainFrameFd(), FRAME_DATA_LENGTH,MemoryFileOpenMode.MODE_READ
             )
 
         } else {
 
-            previewMemoryFile = MemoryFileUtil.openMemoryFile(
-                connector.obtainFrameFd(), FRAME_DATA_LENGTH, MemoryFileOpenMode.MODE_READ
-            )
+            pictureSharedMemory = connector.obtainPictureSharedMemory()
 
-            pictureMemoryFile = MemoryFileUtil.openMemoryFile(
-                connector.obtainPictureFd(), PICTURE_DATA_LENGTH, MemoryFileOpenMode.MODE_READ
-            )
-
+            previewSharedMemory = connector.obtainFrameSharedMemory()
         }
 
     }

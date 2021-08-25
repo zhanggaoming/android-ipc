@@ -9,6 +9,7 @@ import com.zclever.ipc.core.memoryfile.MemoryFileUtil
 import com.zclever.ipc.media.IMediaConnector
 import com.zclever.ipc.media.IMediaReceiver
 import java.lang.ref.WeakReference
+import java.nio.ByteBuffer
 
 class VideoCenter : Service() {
 
@@ -41,33 +42,25 @@ class VideoCenter : Service() {
     }
 
 
-    private val pictureMemoryFile: MemoryFile by lazy {
+    private val pictureMemoryFile by lazy {
 
-        if (IpcManager.useSharedMemory) {
-
-            MemoryFileUtil.createMemoryFile(
-                pictureSharedMemory!!, MemoryFileOpenMode.MODE_READ_WRITE
-            )
-
-        } else {
-
+        if (!IpcManager.useSharedMemory) {
             MemoryFileUtil.createMemoryFile(
                 "pictureMemoryFile", PICTURE_DATA_LENGTH
             )
+        } else {
+            null
         }
     }
 
-    private val frameMemoryFile: MemoryFile by lazy {
+    private val frameMemoryFile by lazy {
 
-        if (IpcManager.useSharedMemory) {
-            MemoryFileUtil.createMemoryFile(
-                frameSharedMemory!!, MemoryFileOpenMode.MODE_READ_WRITE
-            )
-
-        } else {
+        if (!IpcManager.useSharedMemory) {
             MemoryFileUtil.createMemoryFile(
                 "frameMemoryFile", FRAME_DATA_LENGTH
             )
+        } else {
+            null
         }
 
     }
@@ -116,10 +109,10 @@ class VideoCenter : Service() {
             this@VideoCenter.pictureCallBack?.asBinder()?.linkToDeath(pictureDeathRecipient, 0)
         }
 
-        override fun obtainPictureFd(): ParcelFileDescriptor =
-            pictureMemoryFile.parcelFileDescriptor
+        override fun obtainPictureFd(): ParcelFileDescriptor? =
+            pictureMemoryFile?.parcelFileDescriptor
 
-        override fun obtainFrameFd(): ParcelFileDescriptor = frameMemoryFile.parcelFileDescriptor
+        override fun obtainFrameFd(): ParcelFileDescriptor? = frameMemoryFile?.parcelFileDescriptor
 
         override fun obtainPictureSharedMemory(): SharedMemory? = pictureSharedMemory
 
@@ -129,17 +122,32 @@ class VideoCenter : Service() {
     internal fun onTakePicture(
         byteArray: ByteArray, width: Int, height: Int, size: Int, pictureFormat: Int
     ) {
-        pictureMemoryFile.outputStream.use {
-            it.write(byteArray)
-        }.let {
+
+
+        (pictureMemoryFile?.also {
+            it.outputStream.use { outputStream ->
+                outputStream.write(byteArray)
+            }
+        } ?: pictureSharedMemory!!.mapReadWrite().let {
+            it.position(0)
+            it.put(byteArray)
+        }).let {
             pictureCallBack?.onData(width, height, size, pictureFormat)
         }
+
+
     }
 
     internal fun onTakeFrame(byteArray: ByteArray, width: Int, height: Int, size: Int, type: Int) {
-        frameMemoryFile.outputStream.use {
-            it.write(byteArray)
-        }.let {
+
+        (frameMemoryFile?.also {
+            it.outputStream.use { outputStream ->
+                outputStream.write(byteArray)
+            }
+        } ?: frameSharedMemory!!.mapReadWrite().let {
+            it.position(0)
+            it.put(byteArray)
+        }).let {
             previewCallBack?.onData(width, height, size, type)
         }
     }

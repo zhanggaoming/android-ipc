@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.zclever.ipc.core.Config
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.client.FrameType
 import com.zclever.ipc.core.client.IPictureCallBack
@@ -19,6 +20,8 @@ class VideoActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
+        //配置开启媒体服务
+        IpcManager.config(Config.builder().configOpenMedia(true).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
     }

@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ipc.extend.test.InfoService
 import com.ipc.extend.test.UserInfo
+import com.zclever.ipc.core.Config
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.Result
 import com.zclever.ipc.core.client.FrameType
@@ -18,7 +19,7 @@ class CommonActivity : AppCompatActivity() {
         private const val TAG = "CommonActivity"
     }
 
-    val instance by lazy { IpcManager.getDefault(InfoService::class) }
+    val instance by lazy { IpcManager.getService<InfoService>() }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +27,6 @@ class CommonActivity : AppCompatActivity() {
         setContentView(R.layout.activity_common)
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
-
     }
 
     fun syncGetUserInfo(view: View) {

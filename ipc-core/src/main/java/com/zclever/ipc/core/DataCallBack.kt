@@ -25,11 +25,11 @@ abstract class Result<T> : DataCallBack {
 
         if (data.success) {
             onSuccess(
-                GsonInstance.gson.fromJson(GsonInstance.gson.toJson(data.data), dataClass)
+                GsonInstance.fromJson(GsonInstance.toJson(data.data), dataClass)
                     .safeAs<T>()!!
             )
         } else {
-            onFailure(GsonInstance.gson.toJson(data.data))
+            onFailure(GsonInstance.toJson(data.data))
         }
         //返回结果之后移除实例，防止内存泄露
         ClientCache.dataCallBack.entries.filter { it.value == this }

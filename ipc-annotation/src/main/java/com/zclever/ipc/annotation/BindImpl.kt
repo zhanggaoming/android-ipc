@@ -1,4 +1,4 @@
-package com.zclever.ipc.core
+package com.zclever.ipc.annotation
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

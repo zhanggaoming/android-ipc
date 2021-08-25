@@ -36,7 +36,3 @@ data class Response(val success: Boolean, var invokeID: Int, val data: Any) {
     constructor(success: Boolean, data: Any) : this(success, 0, data)
 
 }
-
-data class MemoryFileResponse(
-    val memoryFile: MemoryFile, val width: Int, val height: Int, val availableSize: Int
-)

@@ -26,9 +26,9 @@ class ServiceCenter : Service() {
 
         override fun connect(request: String?): String {
 
-            val requestObj: Request = GsonInstance.gson.fromJson(request, Request::class.java)
+            val requestObj: Request = GsonInstance.fromJson(request, Request::class.java).safeAs<Request>()!!
 
-            Log.i(TAG, "connect: $requestObj")
+            debugI("connect: $requestObj")
 
             when (requestObj.type) {
 
@@ -69,7 +69,7 @@ class ServiceCenter : Service() {
             return ServiceCache.kFunctionMap[request.targetClazzName]?.get(request.functionKey)
                 ?.let { invokeFunction ->
 
-                    GsonInstance.gson.toJson(invokeFunction.callBy(invokeFunction.parameters.mapIndexed { index, kParameter ->
+                    GsonInstance.toJson(invokeFunction.callBy(invokeFunction.parameters.mapIndexed { index, kParameter ->
                         kParameter to when (kParameter.kind) {
                             KParameter.Kind.INSTANCE -> {
                                 ServiceCache.kInstanceMap[request.targetClazzName]
@@ -79,7 +79,7 @@ class ServiceCenter : Service() {
                                 if (index == invokeFunction.parameters.size - 1 && resultCallBack != null) {
                                     resultCallBack //最后一个参数直接用我们构造的的回调对象，服务端要返回给客户端必须要通过这个参数返回
                                 } else {
-                                    GsonInstance.gson.fromJson(
+                                    GsonInstance.fromJson(
                                         request.valueParametersMap[kParameter.name],
                                         kParameter.type.classifier!!.safeAs<KClass<*>>()!!.java
                                     )
@@ -106,7 +106,7 @@ class ServiceCenter : Service() {
         }
 
         override fun registerClient(client: IClient?, clientPid: Int) {
-            Log.i(TAG, "registerClient: $clientPid")
+            debugI("registerClient: $clientPid")
             ServiceCache.remoteClients.register(client!!, clientPid)
         }
 

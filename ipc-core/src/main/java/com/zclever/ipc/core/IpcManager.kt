@@ -7,16 +7,12 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.os.Process
-import android.util.Log
 import com.zclever.ipc.IConnector
-import com.zclever.ipc.core.client.Client
-import com.zclever.ipc.core.client.ClientCache
-import com.zclever.ipc.core.client.ServiceInvocationHandler
-import com.zclever.ipc.core.client.IMediaManager
-import com.zclever.ipc.core.client.VideoClient
-import com.zclever.ipc.core.server.VideoService
+import com.zclever.ipc.annotation.BindImpl
+import com.zclever.ipc.core.client.*
 import com.zclever.ipc.core.server.ServiceCache
 import com.zclever.ipc.core.server.ServiceCenter
+import com.zclever.ipc.core.server.VideoService
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
@@ -33,19 +29,23 @@ object IpcManager {
 
     lateinit var connector: IConnector
 
+
     init {
         injectService()
     }
 
     private fun injectService() {
-        //        //反射拿到kapt生成的类，把this传进去，完成注册服务
-        //        Class.forName("com.lonbon.ipclib.ServiceInject").kotlin.let { kClass ->
-        //
-        //            kClass.declaredFunctions.first { it.name == "inject" }.let { kFunction ->
-        //                kFunction.call(kClass.objectInstance, this)
-        //            }
-        //
-        //        }
+        //反射拿到kapt生成的类，完成自动注册服务
+        try {
+            Class.forName("com.zclever.ipc.core.IpcRegisterHelper").kotlin.let {
+                it.declaredFunctions
+                    .first { function -> function.name == "register" }
+                    .call(it.objectInstance)
+            }
+        } catch (e: Exception) {
+
+            debugE(e.message!!)
+        }
     }
 
 
@@ -76,7 +76,7 @@ object IpcManager {
                 }.toMap()
 
 
-            Log.i(TAG, "register: ${ServiceCache.kFunctionMap}")
+            debugI("register: ${ServiceCache.kFunctionMap}")
         }
 
     }
@@ -85,7 +85,6 @@ object IpcManager {
     fun register(clazz: Class<*>) {
         register(clazz.kotlin)
     }
-
 
     internal lateinit var packageName: String
 
@@ -96,16 +95,26 @@ object IpcManager {
     }
 
 
-    fun open(packageName: String = "com.lonbon.lonbon_app") {
+    fun open(packageName: String) {
         this.packageName = packageName
         val componentName = ComponentName(packageName, ServiceCenter::class.java.name)
         val intent = Intent()
         intent.component = componentName
         appContext.bindService(intent, Connection, Context.BIND_AUTO_CREATE)
 
-        VideoClient.open()
+        if (config.openMedia) {
+            VideoClient.open()
+        }
     }
 
+
+    private var config: Config = Config.builder().build()
+
+    fun config(config: Config) = apply {
+        this.config = config
+    }
+
+    fun debug()= config.debug
 
     internal object Connection : ServiceConnection {
 
@@ -113,30 +122,33 @@ object IpcManager {
             connector = IConnector.Stub.asInterface(service)
             connector.registerClient(Client, Process.myPid())
 
-            Log.i(TAG, "onServiceConnected: $connector")
+            debugI("onServiceConnected: $connector")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
 
-            Log.i(TAG, "onServiceDisconnected: ")
+            debugI("onServiceDisconnected: ")
 
             ClientCache.dataCallBack.clear()
 
-            open()
+            open(packageName)
         }
     }
 
-    fun <T : Any> getDefault(javaClazz: Class<T>): T = getDefault(javaClazz.kotlin)
+    fun <T : Any> getService(javaClazz: Class<T>): T = getService(javaClazz.kotlin)
 
 
-    fun <T : Any> getDefault(interfaceClazz: KClass<T>): T {
+    inline fun <reified T : Any> getService() = getService(T::class)
+
+
+    fun <T : Any> getService(interfaceClazz: KClass<T>): T {
 
         return interfaceClazz.findAnnotation<BindImpl>()?.let { bindImpl ->
 
             val request = Request(type = REQUEST_TYPE_CREATE, targetClazzName = bindImpl.value)
 
             //这里需要通知主进程去创建实例
-            connector.connect(GsonInstance.gson.toJson(request))
+            connector.connect(GsonInstance.toJson(request))
 
             Proxy.newProxyInstance(
                 interfaceClazz.java.classLoader,

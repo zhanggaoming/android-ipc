@@ -28,20 +28,20 @@ internal class ServiceInvocationHandler(
             val callBackInvoke = if (args?.last() is Result<*>) {
                 ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] =
                     args.last() as DataCallBack
-                Log.i(TAG, "invoke: ${args.last()}")
+                debugI("invoke: ${args.last()}")
                 true
             } else {
                 false
             }
 
-            GsonInstance.gson.fromJson(connector.connect(
-                GsonInstance.gson.toJson(
+            GsonInstance.fromJson(connector.connect(
+                GsonInstance.toJson(
                     Request(
                 targetClazzName = targetClazzName,
                 functionKey = kotlinFunction.signature(),
                 valueParametersMap = kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
                     .mapIndexed { index, kParameter ->
-                        kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else GsonInstance.gson.toJson(
+                        kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else GsonInstance.toJson(
                             args!![index]
                         )
                     }.toMap(),
