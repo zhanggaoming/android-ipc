@@ -22,8 +22,8 @@ compileKotlin {
 
 
 dependencies {
-    implementation project(path: ':ipc-annotation')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    api project(path: ':ipc-annotation')
+    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     api "com.squareup:kotlinpoet:1.9.0"
 }
 
