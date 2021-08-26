@@ -23,7 +23,7 @@ allprojects {
 
 ```groovy
 dependencies {
-	implementation 'com.github.zhanggaoming:android-ipc:ipc-core:2.0'
+	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.0'
 }
 ```
 
@@ -197,6 +197,9 @@ class CommonActivity : AppCompatActivity() {
         Toast.makeText(this, instance.syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
 
     }
+    
+    fun asyncGetUserInfo(view: View) {
+
         instance.asyncGetUserInfo(object : Result<UserInfo>() {
 
             override fun onSuccess(data: UserInfo) {
@@ -220,8 +223,9 @@ class CommonActivity : AppCompatActivity() {
 
         })
     }
+    
 
-    }
+}
 ```
 
 想要详细了解如何使用请参考demo：
