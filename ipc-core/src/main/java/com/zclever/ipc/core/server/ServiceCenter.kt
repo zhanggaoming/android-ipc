@@ -8,6 +8,7 @@ import com.zclever.ipc.IClient
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.GsonInstance
+import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 
@@ -15,7 +16,6 @@ import kotlin.reflect.KParameter
  * 服务中心，核心Service组件
  */
 class ServiceCenter : Service() {
-
 
     override fun onBind(intent: Intent?): IBinder? {
         return ConnectorStub
@@ -26,9 +26,10 @@ class ServiceCenter : Service() {
 
         override fun connect(request: String?): String {
 
-            val requestObj: Request = GsonInstance.fromJson(request, Request::class.java).safeAs<Request>()!!
+            val requestObj: Request =
+                GsonInstance.fromJson(request, Request::class.java).safeAs<Request>()!!
 
-            debugI("connect: $requestObj")
+            debugI("connect: $requestObj thread->${Thread.currentThread().name}")
 
             when (requestObj.type) {
 
@@ -78,6 +79,13 @@ class ServiceCenter : Service() {
                             else -> {
                                 if (index == invokeFunction.parameters.size - 1 && resultCallBack != null) {
                                     resultCallBack //最后一个参数直接用我们构造的的回调对象，服务端要返回给客户端必须要通过这个参数返回
+                                } else if (index == request.sharedMemoryParameterIndex) {//共享内存的方式
+                                    ServiceCache.clientSharedMemoryMap[request.pid]!!.inputStream()
+                                        .use { inputStream ->
+                                            ByteArray(request.sharedMemoryLength).also {
+                                                inputStream.read(it)
+                                            }
+                                        }
                                 } else {
                                     GsonInstance.fromJson(
                                         request.valueParametersMap[kParameter.name],
@@ -112,6 +120,20 @@ class ServiceCenter : Service() {
 
         override fun unregisterClient(client: IClient?) {
             ServiceCache.remoteClients.unregister(client!!)
+        }
+
+        override fun exchangeSharedMemory(
+            pid: Int,
+            clientSharedMemory: IpcSharedMemory?
+        ) {
+            clientSharedMemory?.let {
+                ServiceCache.clientSharedMemoryMap[pid] = it
+            }
+
+//            return ServiceCache.serverSharedMemoryMap[pid]
+//                ?: IpcSharedMemory.create(IpcManager.config.sharedMemoryCapacity).also {
+//                    ServiceCache.serverSharedMemoryMap[pid] = it
+//                }
         }
 
     }

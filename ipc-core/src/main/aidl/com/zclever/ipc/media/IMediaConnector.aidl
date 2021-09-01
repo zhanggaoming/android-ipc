@@ -3,8 +3,9 @@ package com.zclever.ipc.media;
 
 // Declare any non-default types here with import statements
 import com.zclever.ipc.media.IMediaReceiver;
-import android.os.ParcelFileDescriptor;
-import android.os.SharedMemory;
+//import android.os.ParcelFileDescriptor;
+//import android.os.SharedMemory;
+import com.zclever.ipc.core.memoryfile.IpcSharedMemory;
 interface IMediaConnector {
 
     void takePicture(int format);
@@ -17,11 +18,8 @@ interface IMediaConnector {
 
     void setPictureCallBack(IMediaReceiver pictureCallBack);
 
-    ParcelFileDescriptor obtainPictureFd();
+    IpcSharedMemory obtainPictureSharedMemory();
 
-    ParcelFileDescriptor obtainFrameFd();
+    IpcSharedMemory obtainFrameSharedMemory();
 
-    SharedMemory obtainPictureSharedMemory();
-
-    SharedMemory obtainFrameSharedMemory();
 }

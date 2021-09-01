@@ -41,4 +41,16 @@
         app:layout_constraintTop_toBottomOf="@id/async_getUserInfo_btn" />
 
 
+    <Button
+        android:layout_marginTop="5dp"
+        android:id="@+id/sendBigData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="sendBigData"
+        android:text="sendBigData"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sum" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

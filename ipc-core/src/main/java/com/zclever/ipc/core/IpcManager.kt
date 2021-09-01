@@ -10,6 +10,7 @@ import android.os.Process
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.client.*
+import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import com.zclever.ipc.core.server.ServiceCache
 import com.zclever.ipc.core.server.ServiceCenter
 import com.zclever.ipc.core.server.VideoService
@@ -44,7 +45,7 @@ object IpcManager {
             }
         } catch (e: Exception) {
 
-            debugE(e.message!!)
+            //debugE(e.message!!)
         }
     }
 
@@ -53,6 +54,7 @@ object IpcManager {
      * 注册对应的接口服务类
      */
     fun register(kClazz: KClass<*>) {
+
 
         kClazz.findAnnotation<BindImpl>()?.let { bindImpl ->
 
@@ -108,19 +110,29 @@ object IpcManager {
     }
 
 
-    private var config: Config = Config.builder().build()
+    internal var config: Config = Config.builder().build()
 
     fun config(config: Config) = apply {
         this.config = config
     }
 
-    fun debug()= config.debug
+    fun debug() = config.debug
 
     internal object Connection : ServiceConnection {
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             connector = IConnector.Stub.asInterface(service)
             connector.registerClient(Client, Process.myPid())
+
+            /* ClientCache.sharedMemoryMap[SharedMemoryType.SERVER] = */
+            connector.exchangeSharedMemory(
+                Process.myPid(),
+                ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] ?: IpcSharedMemory.create(
+                    config.sharedMemoryCapacity
+                ).also {
+                    ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] = it
+                }
+            )
 
             debugI("onServiceConnected: $connector")
         }
@@ -130,6 +142,7 @@ object IpcManager {
             debugI("onServiceDisconnected: ")
 
             ClientCache.dataCallBack.clear()
+            ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
 
             open(packageName)
         }
@@ -140,12 +153,11 @@ object IpcManager {
 
     inline fun <reified T : Any> getService() = getService(T::class)
 
+    fun <T : Any> getService(interfaceClazz: KClass<T>): T =
+        Analyzer(interfaceClazz).analysis().let {
 
-    fun <T : Any> getService(interfaceClazz: KClass<T>): T {
-
-        return interfaceClazz.findAnnotation<BindImpl>()?.let { bindImpl ->
-
-            val request = Request(type = REQUEST_TYPE_CREATE, targetClazzName = bindImpl.value)
+            val request =
+                Request(type = REQUEST_TYPE_CREATE, targetClazzName = it.targetQualifiedName)
 
             //这里需要通知主进程去创建实例
             connector.connect(GsonInstance.toJson(request))
@@ -153,13 +165,10 @@ object IpcManager {
             Proxy.newProxyInstance(
                 interfaceClazz.java.classLoader,
                 arrayOf(interfaceClazz.java),
-                ServiceInvocationHandler(connector, bindImpl.value)
+                ServiceInvocationHandler(connector, it.targetQualifiedName)
             ).safeAs<T>()!!
 
         }
-            ?: throw IllegalAccessException("the annotation BindImpl is not be found in ${interfaceClazz.qualifiedName}!!")
-
-    }
 
 
     /**

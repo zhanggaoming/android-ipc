@@ -25,6 +25,7 @@ class CommonActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_common)
+        IpcManager.config(Config.builder().configDebug(true).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
     }
@@ -81,6 +82,11 @@ class CommonActivity : AppCompatActivity() {
             }
 
         })
+    }
+
+    fun sendBigData(view: View) {
+
+        instance.sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
     }
 

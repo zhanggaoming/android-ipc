@@ -1,6 +1,5 @@
 package com.zclever.ipc.core.server
 
-import android.util.Log
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.GsonInstance
 import java.lang.UnsupportedOperationException

@@ -1,6 +1,7 @@
 package com.ipc.extend.test
 
 
+import com.zclever.ipc.annotation.BigData
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.Result
 
@@ -11,7 +12,9 @@ interface InfoService {
 
     fun syncGetUserInfo(): UserInfo
 
-    fun sum(a:Int,b:Int,c:Int,result: Result<Int>)
+    fun sum(a: Int, b: Int, c: Int, result: Result<Int>)
+
+    fun sendBigData(@BigData data: ByteArray)
 
 }
 

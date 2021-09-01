@@ -18,9 +18,10 @@ data class Request(
     val valueParametersMap: Map<String, String> = HashMap(), //参数具体值，name=>值的json字符串
     val invokeID: Int = -1, //回调方式的唯一id
     val dataType: String = "", //回调的数据类的类型，其实就是我们写的泛型信息，就是我们写的泛型的实参的类的全名称
-    val pid: Int = Process.myPid()
+    val pid: Int = Process.myPid(),
+    val sharedMemoryParameterIndex: Int = -1,//共享内存下标
+    val sharedMemoryLength: Int = 0//共享内存存的数据实际长度
 ) {
-
 
     internal companion object {
         val invokeId: AtomicInteger = AtomicInteger(0) //计算方法的唯一id，不断累加

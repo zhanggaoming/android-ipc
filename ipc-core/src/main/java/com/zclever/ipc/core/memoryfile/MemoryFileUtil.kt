@@ -42,7 +42,6 @@ object MemoryFileUtil {
             .apply { isAccessible = true }
     }
 
-    fun createMemoryFile(name: String, capacity: Int) = MemoryFile(name, capacity)
 
     fun openMemoryFile(fd: ParcelFileDescriptor, capacity: Int, openMode: MemoryFileOpenMode) =
         openMemoryFile(fd.fileDescriptor, capacity, openMode)
@@ -61,26 +60,6 @@ object MemoryFileUtil {
             )
         )
     } else throw IllegalStateException("SDK_INT >= VERSION_CODES.O_MR1 is illegal!")
-
-
-//    fun createMemoryFile(sharedMemory: SharedMemory, openMode: MemoryFileOpenMode) =
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) MemoryFile("tem", 1).apply {
-//
-//            close()
-//
-//            memoryFileMemberMap["mSharedMemory"]!!.set(this, sharedMemory)
-//            memoryFileMemberMap["mMapping"]!!.set(
-//                this, if (openMode == MemoryFileOpenMode.MODE_READ) {
-//
-//                    sharedMemory.mapReadOnly()
-//
-//                } else {
-//                    sharedMemory.mapReadWrite()
-//                }
-//            )
-//
-//        } else throw IllegalAccessException("SDK_INT < VERSION_CODES.O_MR1 is illegal!")
-
 
 }
 

@@ -26,4 +26,8 @@ object InfoServiceManager : InfoService {
     override fun sum(a: Int, b: Int, c: Int, result: Result<Int>) {
         result.onSuccess(a + b + c)
     }
+
+    override fun sendBigData(data: ByteArray) {
+        Log.i(TAG, "sendBigData: ${data.contentToString()}")
+    }
 }

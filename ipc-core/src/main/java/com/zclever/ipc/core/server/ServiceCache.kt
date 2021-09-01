@@ -2,6 +2,7 @@ package com.zclever.ipc.core.server
 
 import android.os.MemoryFile
 import com.zclever.ipc.IClient
+import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import kotlin.reflect.KFunction
 
 /**
@@ -15,8 +16,12 @@ internal object ServiceCache {
 
     val remoteClients: RemoteClientList<IClient> = RemoteClientList() //维护客户端列表
 
-    val memoryFileMap = HashMap<Long, MemoryFile>()
+    val clientSharedMemoryMap = HashMap<Int, IpcSharedMemory>()//维护客户端提供给服务端使用的共享内存map
+
+    val serverSharedMemoryMap = HashMap<Int, IpcSharedMemory>()//维护服务端提供给客户端使用的共享内存map
 
     var videoService: VideoService? = null
+
+
 }
 

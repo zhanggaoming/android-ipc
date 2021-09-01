@@ -1,9 +1,7 @@
 package com.zclever.ipc.core.client
 
-import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
-import com.zclever.ipc.core.GsonInstance
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -25,6 +23,19 @@ internal class ServiceInvocationHandler(
 
         return method?.kotlinFunction?.let { kotlinFunction ->
 
+            val sharedMemoryIndex = kotlinFunction.bigDataIndex()
+
+            var sharedMemoryLength = 0
+
+            if (sharedMemoryIndex > 0) {
+                ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT]!!.outputStream()
+                    .use { outputStream ->
+                        outputStream.write(
+                            args!![sharedMemoryIndex - 1].safeAs<ByteArray>()!!
+                                .also { sharedMemoryLength = it.size })
+                    }
+            }
+
             val callBackInvoke = if (args?.last() is Result<*>) {
                 ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] =
                     args.last() as DataCallBack
@@ -37,20 +48,22 @@ internal class ServiceInvocationHandler(
             GsonInstance.fromJson(connector.connect(
                 GsonInstance.toJson(
                     Request(
-                targetClazzName = targetClazzName,
-                functionKey = kotlinFunction.signature(),
-                valueParametersMap = kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
-                    .mapIndexed { index, kParameter ->
-                        kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else GsonInstance.toJson(
-                            args!![index]
-                        )
-                    }.toMap(),
-                invokeID = if (callBackInvoke) Request.invokeId.get() else -1,
-                //                        dataType = if (callBackInvoke) args!!.last().javaClass.kotlin.supertypes.first { it.classifier == Result::class }
-                //                            .arguments.first().type?.classifier.safeAs<KClass<*>>()!!.qualifiedName
-                //                            ?: "" else ""
-            )
-            )
+                        targetClazzName = targetClazzName,
+                        functionKey = kotlinFunction.signature(),
+                        valueParametersMap = kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
+                            .mapIndexed { index, kParameter ->
+                                kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else if (sharedMemoryIndex > 0 && sharedMemoryIndex - 1 == index) "" else GsonInstance.toJson(
+                                    args!![index]
+                                )
+                            }.toMap(),
+                        invokeID = if (callBackInvoke) Request.invokeId.get() else -1,
+                        sharedMemoryParameterIndex = sharedMemoryIndex,
+                        sharedMemoryLength = sharedMemoryLength
+                        //                        dataType = if (callBackInvoke) args!!.last().javaClass.kotlin.supertypes.first { it.classifier == Result::class }
+                        //                            .arguments.first().type?.classifier.safeAs<KClass<*>>()!!.qualifiedName
+                        //                            ?: "" else ""
+                    )
+                )
             ), kotlinFunction.returnType.classifier!!.safeAs<KClass<*>>()!!.java
             )
 

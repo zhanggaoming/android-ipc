@@ -15,7 +15,6 @@ abstract class VideoService {
     abstract fun stopTakeFrame()
 
 
-
     //照片数据通过这个函数返回
     fun onTakePicture(
         byteArray: ByteArray, width: Int, height: Int, size: Int, pictureFormat: Int

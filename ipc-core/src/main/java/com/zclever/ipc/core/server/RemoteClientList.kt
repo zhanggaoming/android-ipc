@@ -19,6 +19,7 @@ internal class RemoteClientList<T : IInterface> {
 
         override fun binderDied() {
             synchronized(mCallBacks) {
+                ServiceCache.clientSharedMemoryMap[pid]?.close()
                 mCallBacks.remove(pidBinderMap[pid])
                 pidBinderMap.remove(pid)
             }

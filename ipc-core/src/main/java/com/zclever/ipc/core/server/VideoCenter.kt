@@ -4,12 +4,10 @@ import android.app.Service
 import android.content.Intent
 import android.os.*
 import com.zclever.ipc.core.*
-import com.zclever.ipc.core.memoryfile.MemoryFileOpenMode
-import com.zclever.ipc.core.memoryfile.MemoryFileUtil
+import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import com.zclever.ipc.media.IMediaConnector
 import com.zclever.ipc.media.IMediaReceiver
 import java.lang.ref.WeakReference
-import java.nio.ByteBuffer
 
 class VideoCenter : Service() {
 
@@ -26,45 +24,12 @@ class VideoCenter : Service() {
 
 
     private val pictureSharedMemory by lazy {
-        if (IpcManager.useSharedMemory) {
-            SharedMemory.create("pictureMemoryFile", PICTURE_DATA_LENGTH)
-        } else {
-            null
-        }
+        IpcSharedMemory.create(IpcManager.config.mediaMemoryCapacity)
     }
 
     private val frameSharedMemory by lazy {
-        if (IpcManager.useSharedMemory) {
-            SharedMemory.create("frameMemoryFile", FRAME_DATA_LENGTH)
-        } else {
-            null
-        }
+        IpcSharedMemory.create(IpcManager.config.mediaMemoryCapacity)
     }
-
-
-    private val pictureMemoryFile by lazy {
-
-        if (!IpcManager.useSharedMemory) {
-            MemoryFileUtil.createMemoryFile(
-                "pictureMemoryFile", PICTURE_DATA_LENGTH
-            )
-        } else {
-            null
-        }
-    }
-
-    private val frameMemoryFile by lazy {
-
-        if (!IpcManager.useSharedMemory) {
-            MemoryFileUtil.createMemoryFile(
-                "frameMemoryFile", FRAME_DATA_LENGTH
-            )
-        } else {
-            null
-        }
-
-    }
-
 
     var pictureCallBack: IMediaReceiver? = null
 
@@ -109,47 +74,31 @@ class VideoCenter : Service() {
             this@VideoCenter.pictureCallBack?.asBinder()?.linkToDeath(pictureDeathRecipient, 0)
         }
 
-        override fun obtainPictureFd(): ParcelFileDescriptor? =
-            pictureMemoryFile?.parcelFileDescriptor
 
-        override fun obtainFrameFd(): ParcelFileDescriptor? = frameMemoryFile?.parcelFileDescriptor
+        override fun obtainPictureSharedMemory(): IpcSharedMemory = pictureSharedMemory
 
-        override fun obtainPictureSharedMemory(): SharedMemory? = pictureSharedMemory
-
-        override fun obtainFrameSharedMemory(): SharedMemory? = frameSharedMemory
+        override fun obtainFrameSharedMemory(): IpcSharedMemory = frameSharedMemory
     }
 
     internal fun onTakePicture(
         byteArray: ByteArray, width: Int, height: Int, size: Int, pictureFormat: Int
     ) {
 
-
-        (pictureMemoryFile?.also {
-            it.outputStream.use { outputStream ->
-                outputStream.write(byteArray)
-            }
-        } ?: pictureSharedMemory!!.mapReadWrite().let {
-            it.position(0)
-            it.put(byteArray)
-        }).let {
-            pictureCallBack?.onData(width, height, size, pictureFormat)
+        pictureSharedMemory.outputStream().use {
+            it.write(byteArray)
         }
 
+        pictureCallBack?.onData(width, height, size, pictureFormat)
 
     }
 
     internal fun onTakeFrame(byteArray: ByteArray, width: Int, height: Int, size: Int, type: Int) {
 
-        (frameMemoryFile?.also {
-            it.outputStream.use { outputStream ->
-                outputStream.write(byteArray)
-            }
-        } ?: frameSharedMemory!!.mapReadWrite().let {
-            it.position(0)
-            it.put(byteArray)
-        }).let {
-            previewCallBack?.onData(width, height, size, type)
+        frameSharedMemory.outputStream().use {
+            it.write(byteArray)
         }
+        previewCallBack?.onData(width, height, size, type)
+
     }
 
 
