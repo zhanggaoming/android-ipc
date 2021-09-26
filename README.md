@@ -23,7 +23,7 @@ allprojects {
 
 ```groovy
 dependencies {
-	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.1'
+	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.2'
 }
 ```
 
@@ -200,7 +200,7 @@ applay plugin:'kotlin-kapt'
 
 dependencies {
 	...
-    kapt 'com.github.zhanggaoming.android-ipc:ipc-compiler:2.1'
+    kapt 'com.github.zhanggaoming.android-ipc:ipc-compiler:2.2'
 }
 
 ```
