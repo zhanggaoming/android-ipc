@@ -16,7 +16,18 @@ interface InfoService {
 
     fun sendBigData(@BigData data: ByteArray)
 
+    fun getEnum(code: Code): Code
+
+    fun setEventCallBack(callBack: Result<Event>)
+
 }
+
+enum class Code {
+    SUCCESS, FAILURE
+}
+
+
+data class Event(val id: Int)
 
 
 data class UserInfo(val name: String, val age: Int)

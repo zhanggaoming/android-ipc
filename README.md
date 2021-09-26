@@ -2,7 +2,7 @@
 这是一个在安卓平台上运行的ipc的库，让ipc通信更加简单。它具有以下特点：
 
 1. 支持自定义接口来实现跨进程通信，比传统的aidl的方式更简单
-2. 支持异步回调的方式返回数据
+2. 支持异步回调的方式返回数据，也支持设置监听器的方式
 3. 服务注册支持自动注册
 4. 突破binder驱动限制，支持大数据传输(目前还在完善中，目前已支持客户端进程向服务端进程传输大于1M以上的字节数据)
 
@@ -41,8 +41,23 @@ interface InfoService {
 
     fun syncGetUserInfo(): UserInfo
 
-    fun sum(a:Int,b:Int,c:Int,result: Result<Int>)
+    fun sum(a: Int, b: Int, c: Int, result: Result<Int>)
+
+    fun sendBigData(@BigData data: ByteArray)
+
+    fun getEnum(code: Code): Code
+
+    fun setEventCallBack(callBack: Result<Event>)
+
 }
+
+enum class Code {
+    SUCCESS, FAILURE
+}
+
+
+data class Event(val id: Int)
+
 
 data class UserInfo(val name: String, val age: Int)
 ```
@@ -59,7 +74,7 @@ object InfoServiceManager : InfoService {
     //获取userInfo，走的是回调的方式
     override fun asyncGetUserInfo(callBack: Result<UserInfo>) {
         thread {
-            callBack.onSuccess(UserInfo("asyncGetUserInfo", 20))
+            callBack.onData(UserInfo("asyncGetUserInfo", 20))
         }
     }
 
@@ -70,7 +85,35 @@ object InfoServiceManager : InfoService {
 
 
     override fun sum(a: Int, b: Int, c: Int, result: Result<Int>) {
-        result.onSuccess(a + b + c)
+        result.onData(a + b + c)
+    }
+
+    override fun sendBigData(data: ByteArray) {
+        Log.i(TAG, "sendBigData: ${data.contentToString()}")
+    }
+
+    override fun getEnum(code: Code): Code {
+        Log.i(TAG, "getEnum: $code")
+        return Code.SUCCESS
+    }
+
+    private var count=0
+
+    private var mCallBack: Result<Event>? = null
+
+    init {
+
+        thread {//模拟回调事件回复客户端
+            while (true) {
+                mCallBack?.onData(Event(count++))
+
+                Thread.sleep(2000)
+            }
+        }
+    }
+
+    override fun setEventCallBack(callBack: Result<Event>) {
+        mCallBack = callBack
     }
 }
 ```
@@ -79,10 +122,27 @@ java代码必须要写**getInstance**方法，返回自身，使用单例模式�
 
 ```java
 public class InfoServiceManagerJava implements InfoService {
+    private static final String TAG = "InfoServiceManagerJava";
 
     @Override
     public void sum(int a, int b, int c, @NotNull Result<Integer> result) {
-        result.onSuccess(a + b + c);
+        result.onData(a + b + c);
+    }
+
+    @Override
+    public void sendBigData(@NotNull byte[] data) {
+        Log.i(TAG, "sendBigData: " + Arrays.toString(data));
+    }
+
+    @NotNull
+    @Override
+    public Code getEnum(Code code) {
+        return Code.SUCCESS;
+    }
+
+    @Override
+    public void setEventCallBack(@NotNull Result<Event> callBack) {
+
     }
 
     private static final class Holder {
@@ -102,7 +162,7 @@ public class InfoServiceManagerJava implements InfoService {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                callBack.onSuccess(new UserInfo("asyncGetUserInfo", 24));
+                callBack.onData(new UserInfo("asyncGetUserInfo", 24));
             }
         });
 
@@ -114,6 +174,7 @@ public class InfoServiceManagerJava implements InfoService {
         return new UserInfo("syncGetUserInfo", 18);
     }
 }
+
 
 ```
 
@@ -175,7 +236,7 @@ IpcManager.INSTANCE.getService(InfoService.class);
 以下是客户端demo的主要代码：
 
 ```kotlin
-class CommonActivity : AppCompatActivity() {
+lass CommonActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "CommonActivity"
@@ -187,22 +248,25 @@ class CommonActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_common)
+        IpcManager.config(Config.builder().configDebug(true).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
     }
 
-    //这个是按钮点击后会触发这个函数
     fun syncGetUserInfo(view: View) {
 
         Toast.makeText(this, instance.syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
 
+        Log.i(TAG, "syncGetUserInfo: ->${instance.getEnum(Code.FAILURE)}")
+
     }
-    
+
+
     fun asyncGetUserInfo(view: View) {
 
         instance.asyncGetUserInfo(object : Result<UserInfo>() {
 
-            override fun onSuccess(data: UserInfo) {
+            override fun onData(data: UserInfo) {
                 runOnUiThread {
 
                     Toast.makeText(this@CommonActivity, data.toString(), Toast.LENGTH_LONG).show()
@@ -210,20 +274,39 @@ class CommonActivity : AppCompatActivity() {
 
             }
 
-            override fun onFailure(message: String) {
-
-                runOnUiThread {
-
-                    Toast.makeText(
-                        this@CommonActivity, "asyncGetUserInfo failed", Toast.LENGTH_LONG
-                    ).show()
-                }
-
-            }
-
         })
     }
-    
+
+    fun sum(view: View) {
+
+        instance.sum(1, 2, 3, object : Result<Int>() {
+            override fun onData(data: Int) {
+                runOnUiThread {
+                    Toast.makeText(this@CommonActivity, "the sum is $data", Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+        })
+    }
+
+    fun sendBigData(view: View) {
+
+        instance.sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+
+    }
+
+
+
+    fun setEventCallBack(view: View) {
+
+        instance.setEventCallBack(object : Result<Event>() {
+            override fun onData(data: Event) {
+                Log.i(TAG, "onData: ${data.id}")
+            }
+        })
+
+    }
+
 
 }
 ```
@@ -235,12 +318,6 @@ class CommonActivity : AppCompatActivity() {
 ```
 @BindImpl("com.demo.ipc.InfoServiceManager")
 interface InfoService {
-
-    fun asyncGetUserInfo(callBack: Result<UserInfo>)
-
-    fun syncGetUserInfo(): UserInfo
-
-    fun sum(a: Int, b: Int, c: Int, result: Result<Int>)
 
     fun sendBigData(@BigData data: ByteArray)
 

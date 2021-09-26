@@ -5,6 +5,8 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.ipc.extend.test.Code
+import com.ipc.extend.test.Event
 import com.ipc.extend.test.InfoService
 import com.ipc.extend.test.UserInfo
 import com.zclever.ipc.core.Config
@@ -34,6 +36,8 @@ class CommonActivity : AppCompatActivity() {
 
         Toast.makeText(this, instance.syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
 
+        Log.i(TAG, "syncGetUserInfo: ->${instance.getEnum(Code.FAILURE)}")
+
     }
 
 
@@ -41,21 +45,10 @@ class CommonActivity : AppCompatActivity() {
 
         instance.asyncGetUserInfo(object : Result<UserInfo>() {
 
-            override fun onSuccess(data: UserInfo) {
+            override fun onData(data: UserInfo) {
                 runOnUiThread {
 
                     Toast.makeText(this@CommonActivity, data.toString(), Toast.LENGTH_LONG).show()
-                }
-
-            }
-
-            override fun onFailure(message: String) {
-
-                runOnUiThread {
-
-                    Toast.makeText(
-                        this@CommonActivity, "asyncGetUserInfo failed", Toast.LENGTH_LONG
-                    ).show()
                 }
 
             }
@@ -66,27 +59,30 @@ class CommonActivity : AppCompatActivity() {
     fun sum(view: View) {
 
         instance.sum(1, 2, 3, object : Result<Int>() {
-            override fun onSuccess(data: Int) {
+            override fun onData(data: Int) {
                 runOnUiThread {
                     Toast.makeText(this@CommonActivity, "the sum is $data", Toast.LENGTH_LONG)
                         .show()
                 }
             }
-
-            override fun onFailure(message: String) {
-                runOnUiThread {
-
-                    Toast.makeText(this@CommonActivity, "sum failed", Toast.LENGTH_LONG).show()
-
-                }
-            }
-
         })
     }
 
     fun sendBigData(view: View) {
 
         instance.sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+
+    }
+
+
+
+    fun setEventCallBack(view: View) {
+
+        instance.setEventCallBack(object : Result<Event>() {
+            override fun onData(data: Event) {
+                Log.i(TAG, "onData: ${data.id}")
+            }
+        })
 
     }
 

@@ -2,6 +2,7 @@ package com.zclever.ipc.core.client
 
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
+import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -37,8 +38,9 @@ internal class ServiceInvocationHandler(
             }
 
             val callBackInvoke = if (args?.last() is Result<*>) {
-                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] =
+                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = WeakReference(
                     args.last() as DataCallBack
+                )
                 debugI("invoke: ${args.last()}")
                 true
             } else {

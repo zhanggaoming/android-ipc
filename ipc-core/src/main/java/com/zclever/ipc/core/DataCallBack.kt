@@ -1,8 +1,5 @@
 package com.zclever.ipc.core
 
-import android.os.SystemClock
-import android.util.Log
-import com.zclever.ipc.core.client.ClientCache
 import kotlin.reflect.KClass
 
 interface DataCallBack {
@@ -23,21 +20,12 @@ abstract class Result<T> : DataCallBack {
 
     override fun onResponse(data: Response) {
 
-        if (data.success) {
-            onSuccess(
-                GsonInstance.fromJson(GsonInstance.toJson(data.data), dataClass)
-                    .safeAs<T>()!!
-            )
-        } else {
-            onFailure(GsonInstance.toJson(data.data))
-        }
-        //返回结果之后移除实例，防止内存泄露
-        ClientCache.dataCallBack.entries.filter { it.value == this }
-            .forEach { ClientCache.dataCallBack.remove(it.key) }
+        onData(
+            GsonInstance.fromJson(GsonInstance.toJson(data.data), dataClass)
+                .safeAs<T>()!!
+        )
+
     }
 
-
-    abstract fun onSuccess(data: T)
-
-    abstract fun onFailure(message: String)
+    abstract fun onData(data: T)
 }

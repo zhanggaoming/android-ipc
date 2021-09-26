@@ -2,6 +2,8 @@ package com.demo.ipc;
 
 import android.util.Log;
 
+import com.ipc.extend.test.Code;
+import com.ipc.extend.test.Event;
 import com.ipc.extend.test.InfoService;
 import com.ipc.extend.test.UserInfo;
 import com.zclever.ipc.core.Result;
@@ -16,12 +18,23 @@ public class InfoServiceManagerJava implements InfoService {
 
     @Override
     public void sum(int a, int b, int c, @NotNull Result<Integer> result) {
-        result.onSuccess(a + b + c);
+        result.onData(a + b + c);
     }
 
     @Override
     public void sendBigData(@NotNull byte[] data) {
         Log.i(TAG, "sendBigData: " + Arrays.toString(data));
+    }
+
+    @NotNull
+    @Override
+    public Code getEnum(Code code) {
+        return Code.SUCCESS;
+    }
+
+    @Override
+    public void setEventCallBack(@NotNull Result<Event> callBack) {
+
     }
 
     private static final class Holder {
@@ -41,7 +54,7 @@ public class InfoServiceManagerJava implements InfoService {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                callBack.onSuccess(new UserInfo("asyncGetUserInfo", 24));
+                callBack.onData(new UserInfo("asyncGetUserInfo", 24));
             }
         });
 

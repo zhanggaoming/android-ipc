@@ -1,8 +1,6 @@
 package com.zclever.ipc.core.memoryfile
 
 import android.os.*
-import android.util.Log
-import com.zclever.ipc.core.TAG
 import com.zclever.ipc.core.debugI
 import com.zclever.ipc.core.parcelFileDescriptor
 import com.zclever.ipc.core.safeAs
@@ -111,7 +109,7 @@ class IpcSharedMemory(
 
 
     @Throws(IOException::class)
-    private fun readBytes(buffer: ByteArray?, srcOffset: Int, destOffset: Int, count: Int): Int {
+    private fun readBytes(buffer: ByteArray, srcOffset: Int, destOffset: Int, count: Int): Int {
 
         mMapping?.let {
             it.position(srcOffset)
@@ -122,7 +120,7 @@ class IpcSharedMemory(
     }
 
     @Throws(IOException::class)
-    private fun writeBytes(buffer: ByteArray?, srcOffset: Int, destOffset: Int, count: Int) {
+    private fun writeBytes(buffer: ByteArray, srcOffset: Int, destOffset: Int, count: Int) {
         mMapping?.let {
             it.position(destOffset)
             it.put(buffer, srcOffset, count)
@@ -168,17 +166,17 @@ class IpcSharedMemory(
 
         @Throws(IOException::class)
         override fun read(buffer: ByteArray, offset: Int, count: Int): Int {
-            var count = count
-            if (offset < 0 || count < 0 || offset + count > buffer.size) {
+            var countTemp = count
+            if (offset < 0 || countTemp < 0 || offset + countTemp > buffer.size) {
                 // readBytes() also does this check, but we need to do it before
                 // changing count.
                 throw IndexOutOfBoundsException()
             }
-            count = Math.min(count, available())
-            if (count < 1) {
+            countTemp = Math.min(countTemp, available())
+            if (countTemp < 1) {
                 return -1
             }
-            val result: Int = readBytes(buffer, mOffset, offset, count)
+            val result: Int = readBytes(buffer, mOffset, offset, countTemp)
             if (result > 0) {
                 mOffset += result
             }
@@ -187,12 +185,12 @@ class IpcSharedMemory(
 
         @Throws(IOException::class)
         override fun skip(n: Long): Long {
-            var n = n
-            if (mOffset + n > sharedMemory.safeAs<SharedMemory>()!!.size) {
-                n = (sharedMemory.safeAs<SharedMemory>()!!.size - mOffset).toLong()
+            var nTemp = n
+            if (mOffset + nTemp > sharedMemory.safeAs<SharedMemory>()!!.size) {
+                nTemp = (sharedMemory.safeAs<SharedMemory>()!!.size - mOffset).toLong()
             }
-            mOffset += n.toInt()
-            return n
+            mOffset += nTemp.toInt()
+            return nTemp
         }
     }
 

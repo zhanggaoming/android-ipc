@@ -32,8 +32,8 @@ data class Request(
 /**
  * 响应对象
  */
-data class Response(val success: Boolean, var invokeID: Int, val data: Any) {
+data class Response(var invokeID: Int, val data: Any) {
 
-    constructor(success: Boolean, data: Any) : this(success, 0, data)
+    constructor(data: Any) : this(0, data)
 
 }

@@ -16,26 +16,17 @@ internal class ServiceCallBack(
     }
 
 
-    override fun onSuccess(data: Any) {
+    override fun onData(data: Any) {
 
-        debugI("onSuccess: $invokeID,-------${ServiceCache.remoteClients.getClientByPid(pid)}")
+        debugI("onData: $invokeID,-------${ServiceCache.remoteClients.getClientByPid(pid)}")
 
-        val response = Response(true, invokeID, data)
+        val response = Response(invokeID, data)
 
         ServiceCache.remoteClients.getClientByPid(pid)
             ?.onReceive(GsonInstance.toJson(response))
 
     }
 
-    override fun onFailure(message: String) {
-
-        debugI("onFailure: $invokeID,-------${ServiceCache.remoteClients.getClientByPid(pid)}")
-
-        val response = Response(false, invokeID, message)
-
-        ServiceCache.remoteClients.getClientByPid(pid)
-            ?.onReceive(GsonInstance.toJson(response))
-    }
 
 
 }
