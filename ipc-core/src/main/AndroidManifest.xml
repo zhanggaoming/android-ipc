@@ -9,7 +9,7 @@
                     android:authorities="${applicationId}.zclever.ipc"
                      />-->
 
-        <service android:name=".core.server.VideoCenter" />
+        <service android:name=".core.server.VideoCenter"  android:exported="true"/>
         <service android:name=".core.server.ServiceCenter" />
 
     </application>
