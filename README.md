@@ -66,6 +66,15 @@ data class UserInfo(val name: String, val age: Int)
 
 - ##### 服务端进程：
 
+首先服务端进程需要声明在AndroidManifest.xml里面注册两个service：
+
+```xml
+<service android:name="com.zclever.ipc.core.server.VideoCenter" android:exported="true"/>
+<service android:name="com.zclever.ipc.core.server.ServiceCenter" android:exported="true"/>
+```
+
+
+
 服务端实现上述接口，kotlin代码需要是object类：
 
 ```kotlin

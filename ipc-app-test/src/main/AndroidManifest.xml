@@ -27,6 +27,13 @@
             android:name="com.demo.ipc.VideoActivity"
             android:process=".video" />
 
+        <service
+            android:name="com.zclever.ipc.core.server.VideoCenter"
+            android:exported="true" />
+        <service
+            android:name="com.zclever.ipc.core.server.ServiceCenter"
+            android:exported="true" />
+
     </application>
 
 </manifest>
