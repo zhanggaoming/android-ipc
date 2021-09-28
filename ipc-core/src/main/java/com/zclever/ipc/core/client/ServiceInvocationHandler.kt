@@ -2,6 +2,7 @@ package com.zclever.ipc.core.client
 
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
+import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -38,7 +39,7 @@ internal class ServiceInvocationHandler(
             }
 
             val callBackInvoke = if (args?.last() is Result<*>) {
-                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = WeakReference(
+                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = SoftReference(
                     args.last() as DataCallBack
                 )
                 debugI("invoke: ${args.last()}")
