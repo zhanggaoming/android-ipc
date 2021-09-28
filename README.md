@@ -23,7 +23,7 @@ allprojects {
 
 ```groovy
 dependencies {
-	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.4'
+	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.5'
 }
 ```
 
