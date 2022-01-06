@@ -66,13 +66,7 @@ class VideoCenter : Service() {
 
     internal fun onTakeFrame(byteArray: ByteArray, width: Int, height: Int, size: Int, type: Int) {
 
-        val canWrite=frameSharedMemory.canWrite()
-
-        ByteArray(VIDEO_DESCRIPTION_LEN).let {
-            frameSharedMemory.inputStream().read(it)
-        }
-
-        if (canWrite){
+        if (frameSharedMemory.canWrite()){
 
             frameSharedMemory.writeVideoStruct(IpcSharedMemory.VideoStruct(false,type,width, height, size,byteArray))
 

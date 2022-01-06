@@ -120,7 +120,7 @@ fun IpcSharedMemory.readVideoStruct(): IpcSharedMemory.VideoStruct {
     var height: Int
     var size: Int
 
-    return ByteArray(14).also { param ->
+    return ByteArray(VIDEO_DESCRIPTION_LEN).also { param ->
         inputStream().use { inputStream ->
             inputStream.read(param)
         }
