@@ -14,10 +14,6 @@ interface IMediaConnector {
 
     void stopTakeFrame();
 
-    void setPreviewCallBack(IMediaReceiver previewCallBack);
-
-    void setPictureCallBack(IMediaReceiver pictureCallBack);
-
     IpcSharedMemory obtainPictureSharedMemory();
 
     IpcSharedMemory obtainFrameSharedMemory();

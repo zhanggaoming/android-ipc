@@ -219,6 +219,41 @@ class IpcSharedMemory(
         sharedMemory?.let { it.safeAs<SharedMemory>()!!.close() }
     }
 
+
+    //-------------共享内存数据结构------------//
+    //1个字节canWrite+1个字节format+4个字节width+4个字节height+4个字节size+数据部分
+    data class VideoStruct(
+        val canWrite: Boolean,
+        val format: Int,
+        val width: Int,
+        val height: Int,
+        val size: Int,
+        val data: ByteArray?=null
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as VideoStruct
+
+            if (canWrite != other.canWrite) return false
+            if (width != other.width) return false
+            if (height != other.height) return false
+            if (size != other.size) return false
+            if (!data.contentEquals(other.data)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = canWrite.hashCode()
+            result = 31 * result + width
+            result = 31 * result + height
+            result = 31 * result + size
+            result = 31 * result + data.contentHashCode()
+            return result
+        }
+    }
 }
 
 

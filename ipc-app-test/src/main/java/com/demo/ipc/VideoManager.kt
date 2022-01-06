@@ -20,7 +20,7 @@ object VideoManager : VideoService() {
     override fun takePicture(pictureFormat: Int) {
 
         Log.i(TAG, "takePicture: ")
-        
+
         onTakePicture(ByteArray(10) { i ->
             (i * i).toByte()
         }, 640, 480, 10, PictureFormat.JPEG.format)
@@ -37,19 +37,23 @@ object VideoManager : VideoService() {
 
     val handler = Handler(Looper.getMainLooper())
 
+    val frameData = ByteArray(10) { i ->
+        i.toByte()
+    }
 
     private val runnable = object : Runnable {
         override fun run() {
 
             if (sendFrame) {
+                frameData[0]++
 
-                onTakeFrame(ByteArray(100) { i ->
-                    i.toByte()
-                }, 640, 480, 100, FrameType.NV21.type)
+                onTakeFrame(
+                    frameData, 640, 480, 10, FrameType.NV21.type
+                )
 
             }
 
-            handler.postDelayed(this, 2000)
+            handler.postDelayed(this, 150)
         }
 
     }

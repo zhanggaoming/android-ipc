@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        IpcManager.config(Config.builder().configDebug(true).build())
+        IpcManager.config(Config.builder().configDebug(false).build())
         IpcManager.initVideoService(VideoManager) //初始化视频服务,用于提供视频数据
     }
 
