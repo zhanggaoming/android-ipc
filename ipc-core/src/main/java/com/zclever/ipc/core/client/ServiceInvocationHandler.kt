@@ -39,9 +39,7 @@ internal class ServiceInvocationHandler(
             }
 
             val callBackInvoke = if (args?.last() is Result<*>) {
-                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = SoftReference(
-                    args.last() as DataCallBack
-                )
+                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = args.last() as DataCallBack
                 debugI("invoke: ${args.last()}")
                 true
             } else {

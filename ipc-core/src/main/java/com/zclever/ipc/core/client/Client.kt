@@ -15,8 +15,8 @@ internal object Client : IClient.Stub() {
         //接收到服务端给的回调数据后，转成Response给缓存的回调，从而返回了客户端
         GsonInstance.fromJson(data, Response::class.java).safeAs<Response>()?.let { response ->
 
-            debugI("onReceive: -->${ClientCache.dataCallBack[response.invokeID]?.get()}")
-            ClientCache.dataCallBack[response.invokeID]?.get()?.onResponse(response)
+            debugI("onReceive: -->${ClientCache.dataCallBack[response.invokeID]}")
+            ClientCache.dataCallBack[response.invokeID]?.onResponse(response)
 
         }
     }

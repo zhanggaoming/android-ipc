@@ -4,8 +4,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodSession
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.ipc.extend.test.Event
@@ -31,11 +33,22 @@ class VideoActivity : AppCompatActivity(){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video)
         //配置开启媒体服务
-        IpcManager.config(Config.builder().configOpenMedia(true).build())
+        IpcManager.config(Config.builder().configDebug(true).configOpenMedia(true).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
 
         showImageView=findViewById(R.id.img_show)
+
+        Handler(Looper.getMainLooper()).postDelayed(
+            {
+                IpcManager.getService<InfoService>().setEventCallBack(object : Result<Event>() {
+                    override fun onData(data: Event) {
+                        Log.i(TAG, "onData: ${data.id}")
+                    }
+
+                })
+            },3000
+        )
     }
 
 
