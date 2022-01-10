@@ -40,5 +40,15 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/takeFrame" />
 
+    <ImageView
+        android:layout_marginTop="10dp"
+        android:id="@+id/img_show"
+        android:layout_width="400px"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stopTakeFrame"
+        />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

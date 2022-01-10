@@ -1,9 +1,12 @@
 package com.demo.ipc
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.ipc.extend.test.Event
 import com.ipc.extend.test.InfoService
@@ -16,11 +19,13 @@ import com.zclever.ipc.core.client.IPreviewCallBack
 import com.zclever.ipc.core.client.PictureFormat
 import kotlin.concurrent.thread
 
-class VideoActivity : AppCompatActivity() {
+class VideoActivity : AppCompatActivity(){
 
     companion object {
         private const val TAG = "VideoActivity"
     }
+
+    private lateinit var showImageView:ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +34,8 @@ class VideoActivity : AppCompatActivity() {
         IpcManager.config(Config.builder().configOpenMedia(true).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo")
+
+        showImageView=findViewById(R.id.img_show)
     }
 
 
@@ -38,7 +45,24 @@ class VideoActivity : AppCompatActivity() {
             override fun onPictureTaken(
                 data: ByteArray?, width: Int, height: Int, pictureFormat: PictureFormat
             ) {
-                Log.i(TAG, "onPictureTaken: ${data.contentToString()},format->$pictureFormat，thread->${Thread.currentThread().name}")
+
+                data?.let {
+
+                    Log.i(TAG, "data: size->${data.size},format->$pictureFormat，thread->${Thread.currentThread().name}")
+
+                    BitmapFactory.decodeByteArray(data,0,data.size).let {
+
+                        runOnUiThread {
+
+                            showImageView.setImageBitmap(it)
+
+
+                        }
+                    }
+
+                }
+
+
             }
         })
 
@@ -67,4 +91,5 @@ class VideoActivity : AppCompatActivity() {
         IpcManager.getMediaService().stopTakeFrame()
 
     }
+
 }

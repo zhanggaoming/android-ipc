@@ -70,49 +70,6 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
     }
 
-    object PreviewReceiver : IMediaReceiver.Stub() {
-        override fun onData(
-            width: Int, height: Int, size: Int, format: Int
-        ) {
-
-            ByteArray(size).also {
-                previewIpcSharedMemory?.also { ipcSharedMemory ->
-
-                    ipcSharedMemory.inputStream().use { inputStream ->
-                        inputStream.read(it)
-                    }
-                }
-            }.let {
-                previewCallBack?.onPreviewFrame(
-                    it, width, height, if (format == 1) FrameType.NV21 else FrameType.H264
-                )
-            }
-        }
-
-    }
-
-    object PictureReceiver : IMediaReceiver.Stub() {
-        override fun onData(
-            width: Int, height: Int, size: Int, format: Int
-        ) {
-
-
-            ByteArray(size).also {
-                pictureIpcSharedMemory?.also { ipcSharedMemory ->
-
-                    ipcSharedMemory.inputStream().use { inputStream ->
-                        inputStream.read(it)
-                    }
-                }
-            }.let {
-                pictureCallBack?.onPictureTaken(
-                    it, width, height, if (format == 1) PictureFormat.JPEG else PictureFormat.PNG
-                )
-            }
-
-        }
-
-    }
 
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
 
@@ -147,6 +104,8 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
             while (!Thread.currentThread().isInterrupted) {
 
+
+
                 if (pictureIpcSharedMemory?.canRead() == true) {
 
                     pictureIpcSharedMemory?.readVideoStruct()!!.let { videoStruct ->
@@ -178,9 +137,7 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
             while (!Thread.currentThread().isInterrupted) {
 
-                val canRead = previewIpcSharedMemory?.canRead()
-
-                if (canRead!!) {
+                if (previewIpcSharedMemory?.canRead()==true) {
 
                     previewIpcSharedMemory?.readVideoStruct()!!.let { videoStruct ->
 

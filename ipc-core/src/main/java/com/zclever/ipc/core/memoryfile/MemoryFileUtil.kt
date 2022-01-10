@@ -90,8 +90,8 @@ fun ByteArray.toInt(): Int {
     if (size < 4) {
         throw IllegalArgumentException("the byte array size must >= 4!")
     }
-    return this[0].toInt().shl(24).or(this[1].toInt().shl(16)).or(this[2].toInt().shl(8))
-        .or(this[3].toInt())
+    return this[0].toUByte().toInt().shl(24).or(this[1].toUByte().toInt().shl(16)).or(this[2].toUByte().toInt().shl(8))
+        .or(this[3].toUByte().toInt())
 }
 
 const val VIDEO_DESCRIPTION_LEN = 14
@@ -115,6 +115,7 @@ fun IpcSharedMemory.writeCanWrite(canWrite: Boolean) {
 //1个字节canRead+1个字节format+4个字节width+4个字节height+4个字节size+数据部分
 fun IpcSharedMemory.readVideoStruct(): IpcSharedMemory.VideoStruct {
 
+    var canWrite:Boolean
     var format: Int
     var widht: Int
     var height: Int
@@ -125,7 +126,8 @@ fun IpcSharedMemory.readVideoStruct(): IpcSharedMemory.VideoStruct {
             inputStream.read(param)
         }
     }.let { paramBytes ->
-        format = paramBytes[1].toInt()
+        canWrite=paramBytes[0].toUByte().toInt()!=0
+        format = paramBytes[1].toUByte().toInt()
         widht = paramBytes.copyOfRange(2, 6).toInt()
         height = paramBytes.copyOfRange(6, 10).toInt()
         size = paramBytes.copyOfRange(10, 14).toInt()

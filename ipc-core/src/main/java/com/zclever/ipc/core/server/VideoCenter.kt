@@ -58,6 +58,7 @@ class VideoCenter : Service() {
     ) {
         if (pictureSharedMemory.canWrite()){
 
+            debugI("VideoCenter onTakePicture:width->$width,hegiht->$height,size->$size")
             pictureSharedMemory.writeVideoStruct(IpcSharedMemory.VideoStruct(false,pictureFormat,width, height, size,byteArray))
 
         }

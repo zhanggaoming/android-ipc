@@ -19,12 +19,9 @@ object VideoManager : VideoService() {
 
     override fun takePicture(pictureFormat: Int) {
 
-        Log.i(TAG, "takePicture: ")
-
-        onTakePicture(ByteArray(10) { i ->
-            (i * i).toByte()
-        }, 640, 480, 10, PictureFormat.JPEG.format)
-
+        jpegPictureData?.let {
+            onTakePicture(it, 1410, 882, it.size, PictureFormat.JPEG.format)
+        }
     }
 
     override fun takeFrame(type: Int) {
@@ -62,5 +59,6 @@ object VideoManager : VideoService() {
         handler.post(runnable)
     }
 
+    var jpegPictureData: ByteArray? = null
 
 }
