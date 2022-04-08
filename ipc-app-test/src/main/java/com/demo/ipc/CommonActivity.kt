@@ -5,10 +5,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.ipc.extend.test.Code
-import com.ipc.extend.test.Event
-import com.ipc.extend.test.InfoService
-import com.ipc.extend.test.UserInfo
+import com.ipc.extend.test.*
 import com.zclever.ipc.core.Config
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.Result
@@ -29,14 +26,16 @@ class CommonActivity : AppCompatActivity() {
         setContentView(R.layout.activity_common)
         IpcManager.config(Config.builder().configDebug(true).build())
         IpcManager.init(this)
-        IpcManager.open("com.demo.ipcdemo")
+        IpcManager.open("com.demo.ipcdemo"){
+            runOnUiThread {
+                Toast.makeText(this,"连接服务端成功，可以开始调用相关接口了", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     fun syncGetUserInfo(view: View) {
 
         Toast.makeText(this, instance.syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
-
-        Log.i(TAG, "syncGetUserInfo: ->${instance.getEnum(Code.FAILURE)}")
 
     }
 
@@ -75,7 +74,6 @@ class CommonActivity : AppCompatActivity() {
     }
 
 
-
     fun setEventCallBack(view: View) {
 
         instance.setEventCallBack(object : Result<Event>() {
@@ -83,7 +81,15 @@ class CommonActivity : AppCompatActivity() {
                 Log.i(TAG, "onData: ${data.id}")
             }
         })
+    }
 
+    fun setResponeCallBack(view: View) {
+
+        instance.setResponeCallBack(object : Result<BaseRespone<Event>>() {
+            override fun onData(data: BaseRespone<Event>) {
+                Log.i(TAG, "onData,BaseRespone:${data.data.id}")
+            }
+        })
     }
 
 

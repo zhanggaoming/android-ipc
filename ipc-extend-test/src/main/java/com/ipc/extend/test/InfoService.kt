@@ -20,6 +20,8 @@ interface InfoService {
 
     fun setEventCallBack(callBack: Result<Event>)
 
+    fun setResponeCallBack(callBack: Result<BaseRespone<Event>>)
+
 }
 
 enum class Code {
@@ -31,3 +33,7 @@ data class Event(val id: Int)
 
 
 data class UserInfo(val name: String, val age: Int)
+
+class BaseRespone<T>(val data: T) {
+
+}

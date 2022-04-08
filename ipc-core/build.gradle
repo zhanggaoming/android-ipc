@@ -6,6 +6,7 @@ plugins {
 
 group = 'com.github.zhanggaoming'
 
+apply from:'../gradle/publish_aar.gradle'
 
 android {
     compileSdkVersion 30

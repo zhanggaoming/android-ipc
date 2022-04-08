@@ -8,7 +8,7 @@ import java.lang.UnsupportedOperationException
  * 服务端伪造回调类
  */
 internal class ServiceCallBack(
-    private val pid: Int, private val invokeID: Int, val dataType: String
+    private val pid: Int, private val invokeID: String, val dataType: String
 ) : Result<Any>() {
 
     override fun onResponse(data: Response) {

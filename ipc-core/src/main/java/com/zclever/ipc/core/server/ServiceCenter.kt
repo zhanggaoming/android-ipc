@@ -62,7 +62,7 @@ class ServiceCenter : Service() {
 
 
             val resultCallBack: Result<Any>? =
-                if (request.invokeID >= 0 /*&& request.dataType.isNotEmpty()*/) ServiceCallBack(
+                if (request.invokeID != "") ServiceCallBack(
                     request.pid, request.invokeID, request.dataType
                 ) else null
 

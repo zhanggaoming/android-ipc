@@ -1,6 +1,10 @@
 package com.zclever.ipc.core
 
 import com.google.gson.Gson
+import com.google.gson.internal.`$Gson$Types`
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import kotlin.reflect.KClass
 
 /**
@@ -24,8 +28,21 @@ internal object GsonInstance {
 
     fun fromJson(json: String?, dataClass: Class<*>) = gson.fromJson(json, dataClass)
 
+    fun <T> fromJson(json: String?, type: Type) = gson.fromJson<T>(json, type)
+
     fun fromJson(json: String?, dataClass: KClass<*>) = fromJson(json, dataClass.java)
 
+    fun obtainSuperclassTypeParameter(subclass: Class<*>): Type? {
+        val superclass: Type = subclass.genericSuperclass
+        if (superclass is Class<*>) {
+            throw RuntimeException("Missing type parameter.")
+        }
+        val parameterized = superclass as ParameterizedType
+        return `$Gson$Types`.canonicalize(parameterized.actualTypeArguments[0])
+    }
+
 }
+
+
 
 

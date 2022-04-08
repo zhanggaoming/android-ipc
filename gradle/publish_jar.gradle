@@ -1,0 +1,66 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+java {
+//    withJavadocJar()
+    withSourcesJar()
+}
+
+Properties localProperties = new Properties()
+localProperties.load(new FileInputStream(rootProject.getRootDir().getAbsolutePath() + "/local.properties"))
+
+group = properties.getOrDefault("PUBLISH_GROUP", "com.lonbon")
+version = properties.getOrDefault("PUBLISH_VERSION", "1.0.0")
+
+/*
+ * Copyright (C),2007-2020, LonBon Technologies Co. Ltd. All Rights Reserved.
+ */
+
+/**
+ * 本地仓库url
+ */
+def MAVEN_LOCAL_PATH = properties.getOrDefault("MAVEN_LOCAL_PATH", "repo")
+def mavenRepoLocalUrl = MAVEN_LOCAL_PATH.startsWith("/") ? MAVEN_LOCAL_PATH :  "$rootDir/$MAVEN_LOCAL_PATH"
+
+def MAVEN_REPO_TYPE = properties.getOrDefault("MAVEN_REPO_TYPE", "LOCAL")
+def MAVEN_REMOTE_URL_RELEASE = properties.getOrDefault("MAVEN_REMOTE_URL_RELEASE", "http://192.168.4.205:8081/repository/maven-releases/")
+def MAVEN_REMOTE_URL_SNAPSHOT = properties.getOrDefault("MAVEN_REMOTE_URL_SNAPSHOT", "http://192.168.4.205:8081/repository/maven-snapshots/")
+def MAVEN_REMOTE_NAME = localProperties.getOrDefault("MAVEN_REMOTE_NAME", "admin")
+def MAVEN_REMOTE_PASSWORD = localProperties.getOrDefault("MAVEN_REMOTE_PASSWORD", "admin123")
+
+/**
+ * 远程仓库url
+ */
+def mavenRepoRemoteUrl = project.version.contains("SNAPSHOT") ? MAVEN_REMOTE_URL_SNAPSHOT : MAVEN_REMOTE_URL_RELEASE
+
+publishing {
+    repositories {
+        maven {
+            if (MAVEN_REPO_TYPE == "REMOTE") {
+                url = uri(mavenRepoRemoteUrl)
+                credentials {
+                    username = MAVEN_REMOTE_NAME
+                    password = MAVEN_REMOTE_PASSWORD
+                }
+            } else {
+                setUrl(mavenRepoLocalUrl)
+            }
+        }
+    }
+
+    publications {
+        release(MavenPublication) {
+            from components.java
+            artifactId project.name
+//            artifact project.kotlinSourcesJar {
+//                classifier "sources"
+//            }
+        }
+    }
+}
+
+
+
+
+

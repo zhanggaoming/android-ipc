@@ -1,7 +1,6 @@
 package com.zclever.ipc.core
 
 import java.lang.reflect.ParameterizedType
-import kotlin.reflect.KClass
 
 interface DataCallBack {
     fun onResponse(data: Response)
@@ -17,6 +16,10 @@ abstract class Result<T> : DataCallBack {
     private val dataClass by lazy {
         obtainDataClass(this::class.java)
         //this::class.supertypes.first { it.classifier == Result::class }.arguments[0].type!!.classifier.safeAs<KClass<*>>()!!.java
+    }
+
+    private val dataType by lazy {
+        GsonInstance.obtainSuperclassTypeParameter(javaClass)!!
     }
 
     companion object {
@@ -39,9 +42,13 @@ abstract class Result<T> : DataCallBack {
             //println("<----------$superClazz")
 
             if (superClazz == Result::class.java) {
-                return (superClass as ParameterizedType).actualTypeArguments.first().let {
-                    (it as? Class<*>) ?: ((it as? ParameterizedType)?.rawType as Class<*>)
-                }
+
+                val returnClass =
+                    (superClass as ParameterizedType).actualTypeArguments.first().let {
+                        (it as? Class<*>) ?: ((it as? ParameterizedType)?.rawType as Class<*>)
+                    }
+                debugD(returnClass.toString())
+                return returnClass
             }
 
             if (superClazz == Any::class.java || superClazz == Object::class.java) {
@@ -56,10 +63,8 @@ abstract class Result<T> : DataCallBack {
     override fun onResponse(data: Response) {
 
         onData(
-            GsonInstance.fromJson(GsonInstance.toJson(data.data), dataClass)
-                .safeAs<T>()!!
+            GsonInstance.fromJson<T>(GsonInstance.toJson(data.data), dataType)
         )
-
     }
 
     abstract fun onData(data: T)

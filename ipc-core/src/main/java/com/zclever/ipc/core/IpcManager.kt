@@ -20,6 +20,7 @@ import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.staticFunctions
 
+typealias OpenComplete = () -> Unit
 
 /**
  * 核心操作类，客户端都是通过这个类来实现跨进程通信
@@ -96,9 +97,11 @@ object IpcManager {
         this.appContext = context.applicationContext
     }
 
+    private var openComplete: OpenComplete? = null
 
-    fun open(packageName: String) {
+    fun open(packageName: String, openComplete: OpenComplete? = null) {
         this.packageName = packageName
+        this.openComplete = openComplete
         val componentName = ComponentName(packageName, ServiceCenter::class.java.name)
         val intent = Intent()
         intent.component = componentName
@@ -133,6 +136,7 @@ object IpcManager {
                     ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] = it
                 }
             )
+            openComplete?.invoke()
 
             debugI("onServiceConnected: $connector")
         }
@@ -144,7 +148,7 @@ object IpcManager {
             ClientCache.dataCallBack.clear()
             ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
 
-            open(packageName)
+            open(packageName, openComplete)
         }
     }
 
@@ -153,22 +157,29 @@ object IpcManager {
 
     inline fun <reified T : Any> getService() = getService(T::class)
 
-    fun <T : Any> getService(interfaceClazz: KClass<T>): T =
-        Analyzer(interfaceClazz).analysis().let {
+    fun <T : Any> getService(interfaceClazz: KClass<T>): T {
 
-            val request =
-                Request(type = REQUEST_TYPE_CREATE, targetClazzName = it.targetQualifiedName)
+        return ClientCache.instanceMap[interfaceClazz]?.safeAs<T>()
+            ?: Analyzer(interfaceClazz).analysis().let { analyzer ->
+                val request =
+                    Request(
+                        type = REQUEST_TYPE_CREATE,
+                        targetClazzName = analyzer.targetQualifiedName
+                    )
 
-            //这里需要通知主进程去创建实例
-            connector.connect(GsonInstance.toJson(request))
+                //这里需要通知主进程去创建实例
+                connector.connect(GsonInstance.toJson(request))
 
-            Proxy.newProxyInstance(
-                interfaceClazz.java.classLoader,
-                arrayOf(interfaceClazz.java),
-                ServiceInvocationHandler(connector, it.targetQualifiedName)
-            ).safeAs<T>()!!
+                Proxy.newProxyInstance(
+                    interfaceClazz.java.classLoader,
+                    arrayOf(interfaceClazz.java),
+                    ServiceInvocationHandler(connector, analyzer.targetQualifiedName)
+                ).safeAs<T>()!!.also { instance ->
+                    ClientCache.instanceMap[interfaceClazz] = instance
+                }
+            }
 
-        }
+    }
 
 
     /**
@@ -184,3 +195,4 @@ object IpcManager {
     }
 
 }
+

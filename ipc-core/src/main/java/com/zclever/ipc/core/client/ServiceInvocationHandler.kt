@@ -2,8 +2,6 @@ package com.zclever.ipc.core.client
 
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
-import java.lang.ref.SoftReference
-import java.lang.ref.WeakReference
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
@@ -14,16 +12,19 @@ import kotlin.reflect.jvm.kotlinFunction
  * 动态代理InvocationHandler
  */
 internal class ServiceInvocationHandler(
-    private val connector: IConnector, private val targetClazzName: String
+    private val connector: IConnector,
+    private val targetClazzName: String
 ) : InvocationHandler {
 
 
     /**
      * 主要是把参数转成Request发出去
      */
-    override fun invoke(proxy: Any?, method: Method?, args: Array<out Any>?): Any? {
+    override fun invoke(proxy: Any, method: Method?, args: Array<out Any>?): Any? {
 
         return method?.kotlinFunction?.let { kotlinFunction ->
+
+            val signature = kotlinFunction.signature()
 
             val sharedMemoryIndex = kotlinFunction.bigDataIndex()
 
@@ -37,10 +38,8 @@ internal class ServiceInvocationHandler(
                                 .also { sharedMemoryLength = it.size })
                     }
             }
-
             val callBackInvoke = if (args?.last() is Result<*>) {
-                ClientCache.dataCallBack[Request.invokeId.incrementAndGet()] = args.last() as DataCallBack
-                debugI("invoke: ${args.last()}")
+                ClientCache.dataCallBack[signature] = args.last() as DataCallBack
                 true
             } else {
                 false
@@ -57,7 +56,7 @@ internal class ServiceInvocationHandler(
                                     args!![index]
                                 )
                             }.toMap(),
-                        invokeID = if (callBackInvoke) Request.invokeId.get() else -1,
+                        invokeID = if (callBackInvoke) signature else "",
                         sharedMemoryParameterIndex = sharedMemoryIndex,
                         sharedMemoryLength = sharedMemoryLength
                         //                        dataType = if (callBackInvoke) args!!.last().javaClass.kotlin.supertypes.first { it.classifier == Result::class }

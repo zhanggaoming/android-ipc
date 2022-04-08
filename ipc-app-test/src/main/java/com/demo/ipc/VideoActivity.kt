@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodSession
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ipc.extend.test.Event
 import com.ipc.extend.test.InfoService
@@ -35,7 +36,11 @@ class VideoActivity : AppCompatActivity(){
         //配置开启媒体服务
         IpcManager.config(Config.builder().configDebug(true).configOpenMedia(true).build())
         IpcManager.init(this)
-        IpcManager.open("com.demo.ipcdemo")
+        IpcManager.open("com.demo.ipcdemo"){
+            runOnUiThread {
+                Toast.makeText(this,"连接服务端成功，可以开始调用相关接口了", Toast.LENGTH_LONG).show()
+            }
+        }
 
         showImageView=findViewById(R.id.img_show)
 

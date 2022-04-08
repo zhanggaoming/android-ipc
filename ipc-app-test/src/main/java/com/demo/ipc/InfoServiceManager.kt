@@ -1,10 +1,8 @@
 package com.demo.ipc
 
 import android.util.Log
-import com.ipc.extend.test.Code
-import com.ipc.extend.test.Event
-import com.ipc.extend.test.InfoService
-import com.ipc.extend.test.UserInfo
+import com.ipc.extend.test.*
+import com.zclever.ipc.core.Response
 import com.zclever.ipc.core.Result
 import com.zclever.ipc.core.TAG
 import kotlin.concurrent.thread
@@ -47,7 +45,7 @@ object InfoServiceManager : InfoService {
         thread {
             while (true) {
                 mCallBack?.onData(Event(count++))
-
+                responeCallBack?.onData(BaseRespone(Event(id = count)))
                 Thread.sleep(2000)
             }
         }
@@ -55,5 +53,11 @@ object InfoServiceManager : InfoService {
 
     override fun setEventCallBack(callBack: Result<Event>) {
         mCallBack = callBack
+    }
+
+    private var responeCallBack:Result<BaseRespone<Event>>?=null
+
+    override fun setResponeCallBack(callBack: Result<BaseRespone<Event>>) {
+        responeCallBack=callBack
     }
 }

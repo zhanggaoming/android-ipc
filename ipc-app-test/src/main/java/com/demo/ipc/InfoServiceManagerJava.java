@@ -2,6 +2,9 @@ package com.demo.ipc;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
+import com.ipc.extend.test.BaseRespone;
 import com.ipc.extend.test.Code;
 import com.ipc.extend.test.Event;
 import com.ipc.extend.test.InfoService;
@@ -34,6 +37,11 @@ public class InfoServiceManagerJava implements InfoService {
 
     @Override
     public void setEventCallBack(@NotNull Result<Event> callBack) {
+
+    }
+
+    @Override
+    public void setResponeCallBack(@NonNull Result<BaseRespone<Event>> callBack) {
 
     }
 
