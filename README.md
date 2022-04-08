@@ -23,7 +23,7 @@ allprojects {
 
 ```groovy
 dependencies {
-	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:2.5'
+	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:3.0.0'
 }
 ```
 
@@ -245,7 +245,7 @@ IpcManager.INSTANCE.getService(InfoService.class);
 以下是客户端demo的主要代码：
 
 ```kotlin
-lass CommonActivity : AppCompatActivity() {
+class CommonActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "CommonActivity"
