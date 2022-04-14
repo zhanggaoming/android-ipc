@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.os.Process
+import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.client.*
@@ -56,30 +57,33 @@ object IpcManager {
      */
     fun register(kClazz: KClass<*>) {
 
+        try {
+            kClazz.findAnnotation<BindImpl>()?.let { bindImpl ->
 
-        kClazz.findAnnotation<BindImpl>()?.let { bindImpl ->
+                ServiceCache.kFunctionMap[bindImpl.value] =
+                    kClazz.declaredFunctions.map { declaredFunction ->
 
-            ServiceCache.kFunctionMap[bindImpl.value] =
-                kClazz.declaredFunctions.map { declaredFunction ->
+                        declaredFunction.signature() to declaredFunction //针对于同一个类kFunction的signature是唯一的，可以作为key
 
-                    declaredFunction.signature() to declaredFunction //针对于同一个类kFunction的signature是唯一的，可以作为key
+                    }.toMutableList().apply {
 
-                }.toMutableList().apply {
-
-                    //罗列java的getInstance方法
-                    Class.forName(bindImpl.value).kotlin.staticFunctions.filter {
-                        it.signature() == "getInstance()"
-                    }.let { instanceFunctions ->
-                        if (instanceFunctions.isNotEmpty()) {
-                            add(instanceFunctions[0].signature() to instanceFunctions[0])
+                        //罗列java的getInstance方法
+                        Class.forName(bindImpl.value).kotlin.staticFunctions.filter {
+                            it.signature() == "getInstance()"
+                        }.let { instanceFunctions ->
+                            if (instanceFunctions.isNotEmpty()) {
+                                add(instanceFunctions[0].signature() to instanceFunctions[0])
+                            }
                         }
-                    }
 
 
-                }.toMap()
+                    }.toMap()
 
 
-            debugI("register: ${ServiceCache.kFunctionMap}")
+                Log.i(TAG,"register: ${ServiceCache.kFunctionMap}")
+            }
+        }catch (e:Exception){
+
         }
 
     }
