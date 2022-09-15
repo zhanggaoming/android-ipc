@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.os.RemoteException
 import android.util.Log
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.TAG
@@ -70,12 +71,35 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
     }
 
+    internal object ServerDeathRecipient : IBinder.DeathRecipient {
+        override fun binderDied() {
+            //反馈给客户端
+            IpcManager.serverDeath?.invoke()
 
-    override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            previewThread?.interrupt()
+            pictureThread?.interrupt()
+            previewThread?.join()
+            pictureThread?.join()
+            pictureIpcSharedMemory?.close()
+            previewIpcSharedMemory?.close()
+
+            open()
+            IpcManager.openComplete?.invoke()
+        }
+    }
+
+
+    override fun onServiceConnected(name: ComponentName?, service: IBinder) {
 
         debugI("onServiceConnected: ->MediaClient")
 
         connector = IMediaConnector.Stub.asInterface(service)
+
+        try {
+            service.linkToDeath(ServerDeathRecipient, 0)
+        } catch (e: RemoteException) {
+
+        }
 
         pictureIpcSharedMemory = connector.obtainPictureSharedMemory()
 
@@ -103,7 +127,6 @@ internal object VideoClient : IMediaManager, ServiceConnection {
         pictureThread = thread {
 
             while (!Thread.currentThread().isInterrupted) {
-
 
 
                 if (pictureIpcSharedMemory?.canRead() == true) {
@@ -137,7 +160,7 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
             while (!Thread.currentThread().isInterrupted) {
 
-                if (previewIpcSharedMemory?.canRead()==true) {
+                if (previewIpcSharedMemory?.canRead() == true) {
 
                     previewIpcSharedMemory?.readVideoStruct()!!.let { videoStruct ->
 
@@ -171,7 +194,7 @@ internal object VideoClient : IMediaManager, ServiceConnection {
         pictureIpcSharedMemory?.close()
         previewIpcSharedMemory?.close()
 
-        open()
+        // open()
     }
 
 

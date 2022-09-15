@@ -41,15 +41,9 @@ class ServiceCenter : Service() {
 
                 REQUEST_TYPE_INVOKE -> { //方法调用
 
-
                     return invokeFunction(requestObj)
 
                 }
-
-                else -> {
-
-                }
-
             }
 
             return ""

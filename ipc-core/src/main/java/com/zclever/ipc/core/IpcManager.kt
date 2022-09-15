@@ -7,6 +7,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.os.Process
+import android.os.RemoteException
 import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.annotation.BindImpl
@@ -15,6 +16,7 @@ import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import com.zclever.ipc.core.server.ServiceCache
 import com.zclever.ipc.core.server.ServiceCenter
 import com.zclever.ipc.core.server.VideoService
+import java.io.IOException
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
@@ -22,6 +24,8 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.staticFunctions
 
 typealias OpenComplete = () -> Unit
+
+typealias OnServerDeath=()->Unit
 
 /**
  * 核心操作类，客户端都是通过这个类来实现跨进程通信
@@ -101,7 +105,7 @@ object IpcManager {
         this.appContext = context.applicationContext
     }
 
-    private var openComplete: OpenComplete? = null
+    internal var openComplete: OpenComplete? = null
 
     fun open(packageName: String, openComplete: OpenComplete? = null) {
         this.packageName = packageName
@@ -125,10 +129,37 @@ object IpcManager {
 
     fun debug() = config.debug
 
+
+
+    var serverDeath:OnServerDeath?=null
+
+
+
+    /**
+     * 服务端进程死亡通知
+     */
+    internal object ServerDeathRecipient:IBinder.DeathRecipient{
+        override fun binderDied() {
+            //反馈给客户端
+            serverDeath?.invoke()
+
+            ClientCache.dataCallBack.clear()
+            ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
+            //重连
+            open(packageName, openComplete)
+        }
+    }
+
     internal object Connection : ServiceConnection {
 
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder) {
             connector = IConnector.Stub.asInterface(service)
+
+            try {
+                service.linkToDeath(ServerDeathRecipient,0)
+            }catch (e:RemoteException){
+
+            }
             connector.registerClient(Client, Process.myPid())
 
             /* ClientCache.sharedMemoryMap[SharedMemoryType.SERVER] = */
@@ -140,6 +171,8 @@ object IpcManager {
                     ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] = it
                 }
             )
+
+
             openComplete?.invoke()
 
             debugI("onServiceConnected: $connector")
@@ -152,7 +185,7 @@ object IpcManager {
             ClientCache.dataCallBack.clear()
             ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
 
-            open(packageName, openComplete)
+            //open(packageName, openComplete)
         }
     }
 
