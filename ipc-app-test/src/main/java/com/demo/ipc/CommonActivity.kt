@@ -18,8 +18,6 @@ class CommonActivity : AppCompatActivity() {
         private const val TAG = "CommonActivity"
     }
 
-    val instance by lazy { IpcManager.getService<InfoService>() }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,14 +33,14 @@ class CommonActivity : AppCompatActivity() {
 
     fun syncGetUserInfo(view: View) {
 
-        Toast.makeText(this, instance.syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
+        Toast.makeText(this, IpcManager.getService<InfoService>().syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
 
     }
 
 
     fun asyncGetUserInfo(view: View) {
 
-        instance.asyncGetUserInfo(object : Result<UserInfo>() {
+        IpcManager.getService<InfoService>().asyncGetUserInfo(object : Result<UserInfo>() {
 
             override fun onData(data: UserInfo) {
                 runOnUiThread {
@@ -57,7 +55,7 @@ class CommonActivity : AppCompatActivity() {
 
     fun sum(view: View) {
 
-        instance.sum(1, 2, 3, object : Result<Int>() {
+        IpcManager.getService<InfoService>().sum(1, 2, 3, object : Result<Int>() {
             override fun onData(data: Int) {
                 runOnUiThread {
                     Toast.makeText(this@CommonActivity, "the sum is $data", Toast.LENGTH_LONG)
@@ -69,14 +67,14 @@ class CommonActivity : AppCompatActivity() {
 
     fun sendBigData(view: View) {
 
-        instance.sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        IpcManager.getService<InfoService>().sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
     }
 
 
     fun setEventCallBack(view: View) {
 
-        instance.setEventCallBack(object : Result<Event>() {
+        IpcManager.getService<InfoService>().setEventCallBack(object : Result<Event>() {
             override fun onData(data: Event) {
                 Log.i(TAG, "onData: ${data.id}")
             }
@@ -85,7 +83,7 @@ class CommonActivity : AppCompatActivity() {
 
     fun setResponeCallBack(view: View) {
 
-        instance.setResponeCallBack(object : Result<BaseRespone<Event>>() {
+        IpcManager.getService<InfoService>().setResponeCallBack(object : Result<BaseRespone<Event>>() {
             override fun onData(data: BaseRespone<Event>) {
                 Log.i(TAG, "onData,BaseRespone:${data.data.id}")
             }

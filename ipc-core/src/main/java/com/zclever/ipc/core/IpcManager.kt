@@ -145,6 +145,7 @@ object IpcManager {
 
             ClientCache.dataCallBack.clear()
             ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
+            ClientCache.instanceMap.clear()
             //重连
             open(packageName, openComplete)
         }
@@ -184,6 +185,7 @@ object IpcManager {
 
             ClientCache.dataCallBack.clear()
             ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
+            ClientCache.instanceMap.clear()
 
             //open(packageName, openComplete)
         }

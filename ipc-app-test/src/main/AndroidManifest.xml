@@ -22,11 +22,11 @@
 
         <activity
             android:name="com.demo.ipc.CommonActivity"
-            android:process=".common" />
+            android:process="ipc.common" />
 
         <activity
             android:name="com.demo.ipc.VideoActivity"
-            android:process=".video" />
+            android:process="ipc.video" />
 
         <service
             android:name="com.zclever.ipc.core.server.VideoCenter"

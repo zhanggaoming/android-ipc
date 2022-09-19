@@ -24,50 +24,53 @@ internal class ServiceInvocationHandler(
 
         return method?.kotlinFunction?.let { kotlinFunction ->
 
-            val signature = kotlinFunction.signature()
+            try {
+                val signature = kotlinFunction.signature()
 
-            val sharedMemoryIndex = kotlinFunction.bigDataIndex()
+                val sharedMemoryIndex = kotlinFunction.bigDataIndex()
 
-            var sharedMemoryLength = 0
+                var sharedMemoryLength = 0
 
-            if (sharedMemoryIndex > 0) {
-                ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT]!!.outputStream()
-                    .use { outputStream ->
-                        outputStream.write(
-                            args!![sharedMemoryIndex - 1].safeAs<ByteArray>()!!
-                                .also { sharedMemoryLength = it.size })
-                    }
-            }
-            val callBackInvoke = if (args?.last() is Result<*>) {
-                ClientCache.dataCallBack[signature] = args.last() as DataCallBack
-                true
-            } else {
-                false
-            }
+                if (sharedMemoryIndex > 0) {
+                    ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT]!!.outputStream()
+                        .use { outputStream ->
+                            outputStream.write(
+                                args!![sharedMemoryIndex - 1].safeAs<ByteArray>()!!
+                                    .also { sharedMemoryLength = it.size })
+                        }
+                }
+                val callBackInvoke = if (args?.last() is Result<*>) {
+                    ClientCache.dataCallBack[signature] = args.last() as DataCallBack
+                    true
+                } else {
+                    false
+                }
 
-            GsonInstance.fromJson(connector.connect(
-                GsonInstance.toJson(
-                    Request(
-                        targetClazzName = targetClazzName,
-                        functionKey = kotlinFunction.signature(),
-                        valueParametersMap = kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
-                            .mapIndexed { index, kParameter ->
-                                kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else if (sharedMemoryIndex > 0 && sharedMemoryIndex - 1 == index) "" else GsonInstance.toJson(
-                                    args!![index]
-                                )
-                            }.toMap(),
-                        invokeID = if (callBackInvoke) signature else "",
-                        sharedMemoryParameterIndex = sharedMemoryIndex,
-                        sharedMemoryLength = sharedMemoryLength
-                        //                        dataType = if (callBackInvoke) args!!.last().javaClass.kotlin.supertypes.first { it.classifier == Result::class }
-                        //                            .arguments.first().type?.classifier.safeAs<KClass<*>>()!!.qualifiedName
-                        //                            ?: "" else ""
+                GsonInstance.fromJson(connector.connect(
+                    GsonInstance.toJson(
+                        Request(
+                            targetClazzName = targetClazzName,
+                            functionKey = kotlinFunction.signature(),
+                            valueParametersMap = kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
+                                .mapIndexed { index, kParameter ->
+                                    kParameter.name!! to if (callBackInvoke && index == args!!.size - 1) "" else if (sharedMemoryIndex > 0 && sharedMemoryIndex - 1 == index) "" else GsonInstance.toJson(
+                                        args!![index]
+                                    )
+                                }.toMap(),
+                            invokeID = if (callBackInvoke) signature else "",
+                            sharedMemoryParameterIndex = sharedMemoryIndex,
+                            sharedMemoryLength = sharedMemoryLength
+                            //                        dataType = if (callBackInvoke) args!!.last().javaClass.kotlin.supertypes.first { it.classifier == Result::class }
+                            //                            .arguments.first().type?.classifier.safeAs<KClass<*>>()!!.qualifiedName
+                            //                            ?: "" else ""
+                        )
                     )
+                ), kotlinFunction.returnType.classifier!!.safeAs<KClass<*>>()!!.java
                 )
-            ), kotlinFunction.returnType.classifier!!.safeAs<KClass<*>>()!!.java
-            )
 
-            //  Log.i(TAG, "invoke: ->$result")
+            }catch (e:Exception){
+                e.printStackTrace()
+            }
 
         }
     }
