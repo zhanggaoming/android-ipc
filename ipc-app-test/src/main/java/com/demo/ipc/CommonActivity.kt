@@ -9,8 +9,7 @@ import com.ipc.extend.test.*
 import com.zclever.ipc.core.Config
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.Result
-import com.zclever.ipc.core.client.FrameType
-import com.zclever.ipc.core.client.IPreviewCallBack
+import com.zclever.ipc.core.debugI
 
 class CommonActivity : AppCompatActivity() {
 
@@ -24,16 +23,20 @@ class CommonActivity : AppCompatActivity() {
         setContentView(R.layout.activity_common)
         IpcManager.config(Config.builder().configDebug(true).build())
         IpcManager.init(this)
-        IpcManager.open("com.demo.ipcdemo"){
+        IpcManager.open("com.demo.ipcdemo") {
             runOnUiThread {
-                Toast.makeText(this,"连接服务端成功，可以开始调用相关接口了", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "连接服务端成功，可以开始调用相关接口了", Toast.LENGTH_LONG).show()
             }
         }
     }
 
     fun syncGetUserInfo(view: View) {
 
-        Toast.makeText(this, IpcManager.getService<InfoService>().syncGetUserInfo().toString(), Toast.LENGTH_LONG).show()
+        Toast.makeText(
+            this,
+            IpcManager.getService<InfoService>().syncGetUserInfo().toString(),
+            Toast.LENGTH_LONG
+        ).show()
 
     }
 
@@ -83,11 +86,22 @@ class CommonActivity : AppCompatActivity() {
 
     fun setResponeCallBack(view: View) {
 
-        IpcManager.getService<InfoService>().setResponeCallBack(object : Result<BaseRespone<Event>>() {
-            override fun onData(data: BaseRespone<Event>) {
-                Log.i(TAG, "onData,BaseRespone:${data.data.id}")
-            }
-        })
+        IpcManager.getService<InfoService>()
+            .setResponeCallBack(object : Result<BaseRespone<Event>>() {
+                override fun onData(data: BaseRespone<Event>) {
+                    Log.i(TAG, "onData,BaseRespone:${data.data.id}")
+                }
+            })
+    }
+
+    fun transformAreaBeanList(view: View) {
+
+        val data =
+            arrayListOf(AreaBean().apply { areaId = 1 }, AreaBean().apply { areaId = 2 })
+
+
+        debugI("transformAreaBeanList result->${IpcManager.getService<InfoService>().transformAreaBeans(data)}")
+
     }
 
 

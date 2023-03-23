@@ -4,6 +4,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.ipc.extend.test.AreaBean;
 import com.ipc.extend.test.BaseRespone;
 import com.ipc.extend.test.Code;
 import com.ipc.extend.test.Event;
@@ -13,6 +14,7 @@ import com.zclever.ipc.core.Result;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 
@@ -72,5 +74,11 @@ public class InfoServiceManagerJava implements InfoService {
     @Override
     public UserInfo syncGetUserInfo() {
         return new UserInfo("syncGetUserInfo", 18);
+    }
+
+
+    @Override
+    public int transformAreaBeans(@NonNull ArrayList<AreaBean> wrapper) {
+        return 0;
     }
 }

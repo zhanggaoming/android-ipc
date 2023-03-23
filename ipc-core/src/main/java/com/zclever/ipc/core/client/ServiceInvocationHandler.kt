@@ -4,8 +4,11 @@ import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
+import java.lang.reflect.Type
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
 
 /**
@@ -46,7 +49,7 @@ internal class ServiceInvocationHandler(
                     false
                 }
 
-                GsonInstance.fromJson(connector.connect(
+                val responseJson = connector.connect(
                     GsonInstance.toJson(
                         Request(
                             targetClazzName = targetClazzName,
@@ -65,10 +68,19 @@ internal class ServiceInvocationHandler(
                             //                            ?: "" else ""
                         )
                     )
-                ), kotlinFunction.returnType.classifier!!.safeAs<KClass<*>>()!!.java
                 )
 
-            }catch (e:Exception){
+
+                if (kotlinFunction.returnType.classifier == Unit::class) {
+                    GsonInstance.fromJson(
+                        responseJson,
+                        kotlinFunction.returnType.classifier!!.safeAs<KClass<*>>()!!.java
+                    )
+                } else {
+                    GsonInstance.fromJson<Any>(responseJson, kotlinFunction.returnType.javaType)
+                }
+
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
 

@@ -2,9 +2,8 @@ package com.demo.ipc
 
 import android.util.Log
 import com.ipc.extend.test.*
-import com.zclever.ipc.core.Response
-import com.zclever.ipc.core.Result
-import com.zclever.ipc.core.TAG
+import com.zclever.ipc.core.*
+import java.lang.reflect.TypeVariable
 import kotlin.concurrent.thread
 
 
@@ -36,7 +35,7 @@ object InfoServiceManager : InfoService {
         return Code.SUCCESS
     }
 
-    private var count=0
+    private var count = 0
 
     private var mCallBack: Result<Event>? = null
 
@@ -55,9 +54,18 @@ object InfoServiceManager : InfoService {
         mCallBack = callBack
     }
 
-    private var responeCallBack:Result<BaseRespone<Event>>?=null
+    private var responeCallBack: Result<BaseRespone<Event>>? = null
 
     override fun setResponeCallBack(callBack: Result<BaseRespone<Event>>) {
-        responeCallBack=callBack
+        responeCallBack = callBack
+    }
+
+
+    override fun transformAreaBeans(data: ArrayList<AreaBean>): Int {
+
+        data.forEach {
+            debugI(it.toString())
+        }
+        return 1
     }
 }

@@ -22,10 +22,23 @@ interface InfoService {
 
     fun setResponeCallBack(callBack: Result<BaseRespone<Event>>)
 
+
+    fun transformAreaBeans(wrapper: ArrayList<AreaBean>):Int
+
 }
+
+
+data class Data(val areaBeanList:ArrayList<AreaBean>)
 
 enum class Code {
     SUCCESS, FAILURE
+}
+
+class AreaBean {
+
+    var areaId: Int = 0
+
+
 }
 
 

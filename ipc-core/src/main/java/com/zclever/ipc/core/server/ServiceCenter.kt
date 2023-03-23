@@ -11,6 +11,8 @@ import com.zclever.ipc.core.GsonInstance
 import com.zclever.ipc.core.memoryfile.IpcSharedMemory
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
+import kotlin.reflect.javaType
+import kotlin.reflect.jvm.javaType
 
 /**
  * 服务中心，核心Service组件
@@ -81,10 +83,22 @@ class ServiceCenter : Service() {
                                             }
                                         }
                                 } else {
-                                    GsonInstance.fromJson(
+
+//                                    if (kParameter.type.arguments.isNotEmpty() && kParameter.type.classifier != ParameterWrap::class) {
+//                                        throw IllegalArgumentException("the function $invokeFunction parameter $kParameter is illegal,must use ParameterWrapper wrap")
+//                                    }
+
+//                                    GsonInstance.fromJson(
+//                                        request.valueParametersMap[kParameter.name],
+//                                        kParameter.type.classifier!!.safeAs<KClass<Any>>()!!.java
+//                                    )
+
+
+                                    GsonInstance.fromJson<Any>(
                                         request.valueParametersMap[kParameter.name],
-                                        kParameter.type.classifier!!.safeAs<KClass<*>>()!!.java
+                                        kParameter.type.javaType
                                     )
+
                                 }
                             }
 

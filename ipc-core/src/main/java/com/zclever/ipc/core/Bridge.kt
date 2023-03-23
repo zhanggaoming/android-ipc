@@ -1,8 +1,9 @@
 package com.zclever.ipc.core
 
-import android.os.MemoryFile
 import android.os.Process
-import java.util.concurrent.atomic.AtomicInteger
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 
 
 const val REQUEST_TYPE_CREATE = 1
