@@ -1,6 +1,5 @@
 package com.zclever.ipc.core
 
-import com.zclever.ipc.annotation.BigData
 import com.zclever.ipc.annotation.BindImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
@@ -37,27 +36,16 @@ class Analyzer(private val interfaceClazz: KClass<*>) {
 
         interfaceClazz.declaredFunctions.forEach { kFunction ->
 
-            var bigDataCount = 0
+            kFunction.parameters.forEachIndexed { index, kParameter ->
 
-            kFunction.parameters.forEach { kParameter ->
+                if (kParameter.type.classifier == Result::class && index != kFunction.parameters.lastIndex) {//如果是Result作为参数则必须是最后一个参数
 
-                kParameter.findAnnotation<BigData>()?.let {
+                    throw IllegalAccessException("the Result callback can only appear once and must be the last parameter in function. $kFunction")
 
-                    if (kParameter.type.classifier.safeAs<KClass<*>>() != ByteArray::class) {//只能修饰字节数组
-                        throw IllegalAccessException("the annotation BigData can only decorate byte arrays. $kFunction")
-                    }
-
-                    if (bigDataCount >= 1) {//只能出现一次
-                        throw IllegalAccessException("the annotation BigData can only appear once in function. $kFunction")
-                    }
-
-                    bigDataCount++
                 }
             }
 
-
         }
-
     }
 
 

@@ -69,7 +69,7 @@
         android:id="@+id/setResponeCallBack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="setResponeCallBack"
+        android:onClick="setResponseCallBack"
         android:text="setResponeCallBack"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -87,6 +87,31 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/setResponeCallBack"
+        tools:ignore="OnClick" />
+
+
+    <Button
+        android:layout_marginTop="5dp"
+        android:id="@+id/getBigByteArray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="getBigByteArray"
+        android:text="getBigByteArray"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/getAreaBeanList"
+        tools:ignore="OnClick" />
+
+    <Button
+        android:layout_marginTop="5dp"
+        android:id="@+id/asyncGetBigByteArray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="asyncGetBigByteArray"
+        android:text="asyncGetBigByteArray"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/getBigByteArray"
         tools:ignore="OnClick" />
 
 

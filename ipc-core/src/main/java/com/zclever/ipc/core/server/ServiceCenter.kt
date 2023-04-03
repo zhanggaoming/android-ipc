@@ -3,16 +3,17 @@ package com.zclever.ipc.core.server
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.os.MemoryFile
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.zclever.ipc.IClient
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
-import com.zclever.ipc.core.GsonInstance
-import com.zclever.ipc.core.memoryfile.IpcSharedMemory
-import kotlin.reflect.KClass
+import com.zclever.ipc.core.memoryfile.FileDescriptorWrapper
+import com.zclever.ipc.core.memoryfile.parcelFileDescriptor
+import com.zclever.ipc.core.memoryfile.readJsonStr
+import com.zclever.ipc.core.memoryfile.writeByteArray
 import kotlin.reflect.KParameter
-import kotlin.reflect.javaType
-import kotlin.reflect.jvm.javaType
 
 /**
  * 服务中心，核心Service组件
@@ -26,27 +27,28 @@ class ServiceCenter : Service() {
 
     internal object ConnectorStub : IConnector.Stub() {
 
-        override fun connect(request: String?): String {
+        override fun connect(baseRequest: String, requestParam: String?): String {
 
-            val requestObj: Request =
-                GsonInstance.fromJson(request, Request::class.java).safeAs<Request>()!!
+            val requestBaseObj = GsonInstance.fromJson<RequestBase>(baseRequest)
 
-            debugI("connect: $requestObj thread->${Thread.currentThread().name}")
+            debugI("server connect: $requestBaseObj thread->${Thread.currentThread().name}")
 
-            when (requestObj.type) {
+            when (requestBaseObj.type) {
 
                 REQUEST_TYPE_CREATE -> { //创建单实例对象
 
-                    createInstance(requestObj.targetClazzName)
+                    createInstance(requestBaseObj.targetClazzName)
 
                 }
 
                 REQUEST_TYPE_INVOKE -> { //方法调用
 
-                    return invokeFunction(requestObj)
+                    return invokeFunction(requestBaseObj, requestParam)
 
                 }
             }
+
+
 
             return ""
         }
@@ -54,59 +56,65 @@ class ServiceCenter : Service() {
         /**
          * 根据传过来的request来反射调用相应的方法
          */
-        private fun invokeFunction(request: Request): String {
+        private fun invokeFunction(requestBase: RequestBase, requestParam: String?): String {
 
 
-            val resultCallBack: Result<Any>? =
-                if (request.invokeID != "") ServiceCallBack(
-                    request.pid, request.invokeID, request.dataType
-                ) else null
+            //构造回调对象给服务端
+            val resultCallBack: Result<*>? = if (requestBase.callbackKey != "") ServerCallBack(
+                requestBase.pid, requestBase.callbackKey
+            ) else null
+
+            val requestParamObj = GsonInstance.fromJson<RequestParam>(
+                if (requestBase.transformType == TransformType.BINDER) requestParam else ServiceCache.clientSharedMemoryMap[requestBase.pid]!!.readJsonStr(
+                    requestBase.paramValueBytesLen
+                )
+            )
+
+            debugD("server requestParamObj->${requestParamObj}")
 
 
-            return ServiceCache.kFunctionMap[request.targetClazzName]?.get(request.functionKey)
+            return ServiceCache.kFunctionMap[requestBase.targetClazzName]?.get(requestBase.functionKey)
                 ?.let { invokeFunction ->
 
-                    GsonInstance.toJson(invokeFunction.callBy(invokeFunction.parameters.mapIndexed { index, kParameter ->
-                        kParameter to when (kParameter.kind) {
-                            KParameter.Kind.INSTANCE -> {
-                                ServiceCache.kInstanceMap[request.targetClazzName]
-                            }
 
-                            else -> {
-                                if (index == invokeFunction.parameters.size - 1 && resultCallBack != null) {
-                                    resultCallBack //最后一个参数直接用我们构造的的回调对象，服务端要返回给客户端必须要通过这个参数返回
-                                } else if (index == request.sharedMemoryParameterIndex) {//共享内存的方式
-                                    ServiceCache.clientSharedMemoryMap[request.pid]!!.inputStream()
-                                        .use { inputStream ->
-                                            ByteArray(request.sharedMemoryLength).also {
-                                                inputStream.read(it)
-                                            }
-                                        }
-                                } else {
-
-//                                    if (kParameter.type.arguments.isNotEmpty() && kParameter.type.classifier != ParameterWrap::class) {
-//                                        throw IllegalArgumentException("the function $invokeFunction parameter $kParameter is illegal,must use ParameterWrapper wrap")
-//                                    }
-
-//                                    GsonInstance.fromJson(
-//                                        request.valueParametersMap[kParameter.name],
-//                                        kParameter.type.classifier!!.safeAs<KClass<Any>>()!!.java
-//                                    )
-
-
-                                    GsonInstance.fromJson<Any>(
-                                        request.valueParametersMap[kParameter.name],
-                                        kParameter.type.javaType
-                                    )
-
+                    val invokeResult =
+                        invokeFunction.callBy(invokeFunction.parameters.mapIndexed { index, kParameter ->
+                            kParameter to when (kParameter.kind) {
+                                KParameter.Kind.INSTANCE -> {
+                                    ServiceCache.kInstanceMap[requestBase.targetClazzName]
                                 }
+
+                                else -> {
+                                    if (index == invokeFunction.parameters.size - 1 && resultCallBack != null) {
+                                        resultCallBack //最后一个参数直接用我们构造的的回调对象给到服务端，服务端要返回给客户端必须要通过这个对象返回给客户端
+                                    } else {
+                                        GsonInstance.fromJson<Any>(
+                                            requestParamObj.paramValueMap[kParameter.name],
+                                            kParameter.type
+                                        )
+                                    }
+                                }
+
                             }
+                        }.toMap())
 
-                        }
-                    }.toMap()))
 
+                    val resultJson = invokeResult.toJson()
+
+
+                    if (resultJson.length < BINDER_MAX_TRANSFORM_JSON_LENGTH) {
+                        Response(resultJson).toJson()
+                    } else {
+                        val resultByteArray = resultJson.encodeToByteArray()
+
+                        ServiceCache.serverResponseMemoryMap[requestBase.pid]!!.writeByteArray(
+                                resultByteArray
+                            )
+
+                        Response(null, resultByteArray.size).toJson()
+                    }
                 }
-                ?: throw IllegalAccessException("the ${request.targetClazzName} is not be registered!!")
+                ?: throw IllegalAccessException("the ${requestBase.targetClazzName} is not be registered!!")
         }
 
         private fun createInstance(targetClazzName: String) {
@@ -121,27 +129,37 @@ class ServiceCenter : Service() {
 
         }
 
-        override fun registerClient(client: IClient?, clientPid: Int) {
+        override fun registerClient(
+            client: IClient?, clientPid: Int
+        ) {
             debugI("registerClient: $clientPid")
             ServiceCache.remoteClients.register(client!!, clientPid)
         }
 
-        override fun unregisterClient(client: IClient?) {
-            ServiceCache.remoteClients.unregister(client!!)
+        override fun exchangeSharedMemory(
+            clientPid: Int, clientFd: ParcelFileDescriptor
+        ): FileDescriptorWrapper {
+
+            ServiceCache.clientSharedMemoryMap[clientPid] = clientFd
+
+            return FileDescriptorWrapper(MemoryFile(
+                "ServerResponse-$clientPid", IpcManager.config.sharedMemoryCapacity
+            ).let {
+                ServiceCache.serverResponseMemoryMap[clientPid] = it
+                it.parcelFileDescriptor
+            }, MemoryFile(
+                "ServerCallback-$clientPid", IpcManager.config.sharedMemoryCapacity
+            ).let {
+                ServiceCache.serverCallbackMemoryMap[clientPid] = it
+                it.parcelFileDescriptor
+            })
+
         }
 
-        override fun exchangeSharedMemory(
-            pid: Int,
-            clientSharedMemory: IpcSharedMemory?
-        ) {
-            clientSharedMemory?.let {
-                ServiceCache.clientSharedMemoryMap[pid] = it
-            }
+        override fun unregisterClient(client: IClient?) {
 
-//            return ServiceCache.serverSharedMemoryMap[pid]
-//                ?: IpcSharedMemory.create(IpcManager.config.sharedMemoryCapacity).also {
-//                    ServiceCache.serverSharedMemoryMap[pid] = it
-//                }
+            ServiceCache.remoteClients.unregister(client!!)
+
         }
 
     }

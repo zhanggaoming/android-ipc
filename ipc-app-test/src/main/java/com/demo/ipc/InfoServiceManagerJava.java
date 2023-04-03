@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.ipc.extend.test.AreaBean;
-import com.ipc.extend.test.BaseRespone;
+import com.ipc.extend.test.BaseResponse;
 import com.ipc.extend.test.Code;
 import com.ipc.extend.test.Event;
 import com.ipc.extend.test.InfoService;
@@ -43,7 +43,7 @@ public class InfoServiceManagerJava implements InfoService {
     }
 
     @Override
-    public void setResponeCallBack(@NonNull Result<BaseRespone<Event>> callBack) {
+    public void setResponseCallBack(@NonNull Result<BaseResponse<Event>> callBack) {
 
     }
 
@@ -78,7 +78,19 @@ public class InfoServiceManagerJava implements InfoService {
 
 
     @Override
-    public int transformAreaBeans(@NonNull ArrayList<AreaBean> wrapper) {
+    public int transformAreaBeans(@NonNull ArrayList<AreaBean> areaBeanList) {
         return 0;
+    }
+
+    @NonNull
+    @Override
+    public byte[] getBigByteArray() {
+        return new byte[0];
+    }
+
+
+    @Override
+    public void asyncGetBigByteArray(@NonNull Result<byte[]> callBack) {
+
     }
 }

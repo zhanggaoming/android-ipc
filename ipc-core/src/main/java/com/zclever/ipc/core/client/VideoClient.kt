@@ -5,24 +5,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.os.ParcelFileDescriptor
 import android.os.RemoteException
-import android.util.Log
 import com.zclever.ipc.core.IpcManager
-import com.zclever.ipc.core.TAG
 import com.zclever.ipc.core.debugI
-import com.zclever.ipc.core.memoryfile.IpcSharedMemory
-import com.zclever.ipc.core.memoryfile.canRead
-import com.zclever.ipc.core.memoryfile.readVideoStruct
-import com.zclever.ipc.core.memoryfile.writeCanWrite
+import com.zclever.ipc.core.inputStream
 import com.zclever.ipc.core.server.VideoCenter
+import com.zclever.ipc.media.IMediaCallback
 import com.zclever.ipc.media.IMediaConnector
-import com.zclever.ipc.media.IMediaReceiver
-import kotlin.concurrent.thread
+
 
 /**
  * 媒体服务客户端
  */
-internal object VideoClient : IMediaManager, ServiceConnection {
+internal object VideoClient : IMediaManager, ServiceConnection, IMediaCallback.Stub() {
 
     internal fun open() {
         val mediaComponentName = ComponentName(IpcManager.packageName, VideoCenter::class.java.name)
@@ -38,9 +34,9 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
     private var pictureCallBack: IPictureCallBack? = null
 
-    private var previewIpcSharedMemory: IpcSharedMemory? = null
+    private var previewIpcSharedMemory: ParcelFileDescriptor? = null
 
-    private var pictureIpcSharedMemory: IpcSharedMemory? = null
+    private var pictureIpcSharedMemory: ParcelFileDescriptor? = null
 
 
     override fun takeFrame(frameType: FrameType) {
@@ -62,13 +58,11 @@ internal object VideoClient : IMediaManager, ServiceConnection {
         //取帧数据回调接口
         previewCallBack = callBack
 
-
     }
 
     override fun setPictureCallBack(callBack: IPictureCallBack) {
         //取拍照数据回调接口
         pictureCallBack = callBack
-
     }
 
     internal object ServerDeathRecipient : IBinder.DeathRecipient {
@@ -76,10 +70,7 @@ internal object VideoClient : IMediaManager, ServiceConnection {
             //反馈给客户端
             IpcManager.serverDeath?.invoke()
 
-            previewThread?.interrupt()
-            pictureThread?.interrupt()
-            previewThread?.join()
-            pictureThread?.join()
+            connector.setMediaCallback(null)
             pictureIpcSharedMemory?.close()
             previewIpcSharedMemory?.close()
 
@@ -105,96 +96,55 @@ internal object VideoClient : IMediaManager, ServiceConnection {
 
         previewIpcSharedMemory = connector.obtainFrameSharedMemory()
 
-
-        startReadThread()
-
+        connector.setMediaCallback(this)
     }
 
-    private var previewThread: Thread? = null
-
-    private var pictureThread: Thread? = null
-
-    private fun startReadThread() {
-
-        startPreviewThread()
-
-        startPictureThread()
-
-    }
-
-    private fun startPictureThread() {
-
-        pictureThread = thread {
-
-            while (!Thread.currentThread().isInterrupted) {
-
-
-                if (pictureIpcSharedMemory?.canRead() == true) {
-
-                    pictureIpcSharedMemory?.readVideoStruct()!!.let { videoStruct ->
-
-                        if (videoStruct.data != null) {
-                            pictureCallBack?.onPictureTaken(
-                                videoStruct.data,
-                                videoStruct.width,
-                                videoStruct.height,
-                                if (videoStruct.format == 1) PictureFormat.JPEG else PictureFormat.PNG
-                            )
-                        }
-                    }
-
-                    pictureIpcSharedMemory?.writeCanWrite(true)
-
-                }
-
-                Thread.sleep(10)
-            }
-
-        }
-
-    }
-
-    private fun startPreviewThread() {
-
-        previewThread = thread {
-
-            while (!Thread.currentThread().isInterrupted) {
-
-                if (previewIpcSharedMemory?.canRead() == true) {
-
-                    previewIpcSharedMemory?.readVideoStruct()!!.let { videoStruct ->
-
-                        if (videoStruct.data != null) {
-
-                            previewCallBack?.onPreviewFrame(
-                                videoStruct.data,
-                                videoStruct.width,
-                                videoStruct.height,
-                                if (videoStruct.format == 1) FrameType.NV21 else FrameType.H264
-                            )
-                        }
-
-                    }
-
-                    previewIpcSharedMemory?.writeCanWrite(true)
-
-                }
-
-                Thread.sleep(10)
-            }
-
-        }
-    }
 
     override fun onServiceDisconnected(name: ComponentName?) {
-        previewThread?.interrupt()
-        pictureThread?.interrupt()
-        previewThread?.join()
-        pictureThread?.join()
+        connector.setMediaCallback(null)
         pictureIpcSharedMemory?.close()
         previewIpcSharedMemory?.close()
 
         // open()
+    }
+
+    override fun onPicture(width: Int, height: Int, size: Int, format: Int) {
+
+        pictureCallBack?.let { callback ->
+
+            pictureIpcSharedMemory?.inputStream()?.use { inputStream ->
+
+                ByteArray(size).also { inputStream.read(it) }.let { data ->
+
+                    callback.onPictureTaken(
+                        data,
+                        width,
+                        height,
+                        if (format == 1) PictureFormat.JPEG else PictureFormat.PNG
+                    )
+                }
+            }
+        }
+
+
+    }
+
+    override fun onFrame(width: Int, height: Int, size: Int, type: Int) {
+        previewCallBack?.let { callback ->
+
+            previewIpcSharedMemory?.inputStream()?.use { inputStream ->
+
+                ByteArray(size).also { inputStream.read(it) }.let { data ->
+
+                    callback.onPreviewFrame(
+                        data,
+                        width,
+                        height,
+                        if (type == 1) FrameType.NV21 else FrameType.H264
+                    )
+                }
+            }
+        }
     }
 
 

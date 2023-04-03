@@ -4,19 +4,15 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Build
-import android.os.IBinder
-import android.os.Process
-import android.os.RemoteException
+import android.os.*
 import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.client.*
-import com.zclever.ipc.core.memoryfile.IpcSharedMemory
+import com.zclever.ipc.core.memoryfile.parcelFileDescriptor
 import com.zclever.ipc.core.server.ServiceCache
 import com.zclever.ipc.core.server.ServiceCenter
 import com.zclever.ipc.core.server.VideoService
-import java.io.IOException
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
@@ -25,7 +21,7 @@ import kotlin.reflect.full.staticFunctions
 
 typealias OpenComplete = () -> Unit
 
-typealias OnServerDeath=()->Unit
+typealias OnServerDeath = () -> Unit
 
 /**
  * 核心操作类，客户端都是通过这个类来实现跨进程通信
@@ -84,9 +80,9 @@ object IpcManager {
                     }.toMap()
 
 
-                Log.i(TAG,"register: ${ServiceCache.kFunctionMap}")
+                Log.i(TAG, "register: ${ServiceCache.kFunctionMap}")
             }
-        }catch (e:Exception){
+        } catch (e: Exception) {
 
         }
 
@@ -130,26 +126,24 @@ object IpcManager {
     fun debug() = config.debug
 
 
-
-    var serverDeath:OnServerDeath?=null
-
+    var serverDeath: OnServerDeath? = null
 
 
     /**
      * 服务端进程死亡通知
      */
-    internal object ServerDeathRecipient:IBinder.DeathRecipient{
+    internal object ServerDeathRecipient : IBinder.DeathRecipient {
         override fun binderDied() {
             //反馈给客户端
             serverDeath?.invoke()
 
-            ClientCache.dataCallBack.clear()
-            ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
+            ClientCache.dataCallback.clear()
             ClientCache.instanceMap.clear()
             //重连
             open(packageName, openComplete)
         }
     }
+
 
     internal object Connection : ServiceConnection {
 
@@ -157,22 +151,23 @@ object IpcManager {
             connector = IConnector.Stub.asInterface(service)
 
             try {
-                service.linkToDeath(ServerDeathRecipient,0)
-            }catch (e:RemoteException){
+                service.linkToDeath(ServerDeathRecipient, 0)
+            } catch (e: RemoteException) {
 
             }
+
             connector.registerClient(Client, Process.myPid())
 
-            /* ClientCache.sharedMemoryMap[SharedMemoryType.SERVER] = */
+            ClientCache.clientSharedMemory =
+                MemoryFile("Client-${Process.myPid()}", config.sharedMemoryCapacity)
+
             connector.exchangeSharedMemory(
                 Process.myPid(),
-                ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] ?: IpcSharedMemory.create(
-                    config.sharedMemoryCapacity
-                ).also {
-                    ClientCache.sharedMemoryMap[SharedMemoryType.CLIENT] = it
-                }
-            )
-
+                ClientCache.clientSharedMemory!!.parcelFileDescriptor
+            ).let {
+                ClientCache.serverResponseSharedMemory = it.responseFileDescriptor
+                ClientCache.serverCallbackSharedMemory = it.callbackFileDescriptor
+            }
 
             openComplete?.invoke()
 
@@ -183,10 +178,15 @@ object IpcManager {
 
             debugI("onServiceDisconnected: ")
 
-            ClientCache.dataCallBack.clear()
-            ClientCache.sharedMemoryMap[SharedMemoryType.SERVER]?.close()
+            ClientCache.dataCallback.clear()
             ClientCache.instanceMap.clear()
 
+            ClientCache.clientSharedMemory?.close()
+            ClientCache.clientSharedMemory = null
+            ClientCache.serverCallbackSharedMemory?.close()
+            ClientCache.serverCallbackSharedMemory = null
+            ClientCache.serverResponseSharedMemory?.close()
+            ClientCache.serverResponseSharedMemory = null
             //open(packageName, openComplete)
         }
     }
@@ -200,14 +200,14 @@ object IpcManager {
 
         return ClientCache.instanceMap[interfaceClazz]?.safeAs<T>()
             ?: Analyzer(interfaceClazz).analysis().let { analyzer ->
-                val request =
-                    Request(
+                val requestBase =
+                    RequestBase(
                         type = REQUEST_TYPE_CREATE,
                         targetClazzName = analyzer.targetQualifiedName
                     )
 
                 //这里需要通知主进程去创建实例
-                connector.connect(GsonInstance.toJson(request))
+                connector.connect(GsonInstance.toJson(requestBase), null)
 
                 Proxy.newProxyInstance(
                     interfaceClazz.java.classLoader,

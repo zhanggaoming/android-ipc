@@ -1,10 +1,12 @@
 package com.zclever.ipc.core
 
-import android.os.MemoryFile
 import android.os.ParcelFileDescriptor
+import android.system.Os
+import android.system.OsConstants
 import android.util.Log
 import com.zclever.ipc.annotation.BigData
-import com.zclever.ipc.core.memoryfile.MemoryFileUtil
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.findAnnotation
 
@@ -22,7 +24,7 @@ fun <T> Any?.safeAs(): T? {
 /**
  * 针对于每个KFunction生成唯一的签名，有点类似于native的方法签名，但不完全一样
  */
-fun <T : KFunction<*>> T.signature(): String {
+internal fun <T : KFunction<*>> T.signature(): String {
 
     return parameters.joinToString(
         separator = ";", prefix = "${name}(", postfix = ")"
@@ -33,7 +35,7 @@ fun <T : KFunction<*>> T.signature(): String {
 
 }
 
-fun <T : KFunction<*>> T.bigDataIndex(): Int {
+internal fun <T : KFunction<*>> T.bigDataIndex(): Int {
 
     parameters.forEach {
         if (it.findAnnotation<BigData>() != null) {
@@ -44,32 +46,38 @@ fun <T : KFunction<*>> T.bigDataIndex(): Int {
     return -1
 }
 
-fun debugI(msg: String) {
+internal fun debugI(msg: String) {
     if (IpcManager.debug()) {
         Log.i(TAG, msg)
     }
 }
 
-fun debugD(msg: String) {
+internal fun debugD(msg: String) {
     if (IpcManager.debug()) {
         Log.d(TAG, msg)
     }
 }
 
-fun debugW(msg: String) {
+internal fun debugW(msg: String) {
     if (IpcManager.debug()) {
         Log.w(TAG, msg)
     }
 }
 
-fun debugE(msg: String) {
+internal fun debugE(msg: String) {
     if (IpcManager.debug()) {
         Log.e(TAG, msg)
     }
 }
 
-val MemoryFile.parcelFileDescriptor: ParcelFileDescriptor
-    get() = MemoryFileUtil.parcelFileDescriptorConstructor.newInstance(
-        MemoryFileUtil.memoryFileKFunctionMap["getFileDescriptor"]!!.call(this)
-    )
+internal fun Any?.toJson() = GsonInstance.toJson(this)
+
+internal fun ParcelFileDescriptor.outputStream() = FileOutputStream(fileDescriptor.apply {
+    Os.lseek(this, 0, OsConstants.SEEK_SET)
+})
+
+internal fun ParcelFileDescriptor.inputStream() = FileInputStream(fileDescriptor.apply {
+    Os.lseek(this, 0, OsConstants.SEEK_SET)
+})
+
 

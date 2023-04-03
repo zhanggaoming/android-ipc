@@ -12,7 +12,8 @@ class Config private constructor(builder: Builder) {
     val mediaMemoryCapacity = builder.mediaMemoryCapacity
 
     companion object {
-        const val DEFAULT_MEMORY_SIZE = 1280 * 720 * 4
+        const val DEFAULT_MEDIA_MEMORY_SIZE = 1280 * 720 * 4 //
+        const val SHARED_MEMORY_DEFAULT_SIZE = 5 * 1024 * 1024 //默认5M数据
         fun builder() = Builder()
     }
 
@@ -22,9 +23,9 @@ class Config private constructor(builder: Builder) {
 
         internal var openMedia = false
 
-        internal var sharedMemoryCapacity = DEFAULT_MEMORY_SIZE
+        internal var sharedMemoryCapacity = SHARED_MEMORY_DEFAULT_SIZE
 
-        internal var mediaMemoryCapacity = DEFAULT_MEMORY_SIZE
+        internal var mediaMemoryCapacity = DEFAULT_MEDIA_MEMORY_SIZE
 
         fun configDebug(debug: Boolean) = apply {
             this.debug = debug

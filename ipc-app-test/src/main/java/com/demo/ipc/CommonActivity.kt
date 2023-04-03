@@ -9,12 +9,13 @@ import com.ipc.extend.test.*
 import com.zclever.ipc.core.Config
 import com.zclever.ipc.core.IpcManager
 import com.zclever.ipc.core.Result
-import com.zclever.ipc.core.debugI
+import kotlin.concurrent.thread
 
 class CommonActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "CommonActivity"
+
     }
 
 
@@ -68,9 +69,15 @@ class CommonActivity : AppCompatActivity() {
         })
     }
 
+    val bigByteArray = ByteArray(1024 * 1024) {
+        it.toByte()
+    }
+
     fun sendBigData(view: View) {
 
-        IpcManager.getService<InfoService>().sendBigData(byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+        thread {
+            IpcManager.getService<InfoService>().sendBigData(bigByteArray)
+        }
 
     }
 
@@ -84,11 +91,11 @@ class CommonActivity : AppCompatActivity() {
         })
     }
 
-    fun setResponeCallBack(view: View) {
+    fun setResponseCallBack(view: View) {
 
         IpcManager.getService<InfoService>()
-            .setResponeCallBack(object : Result<BaseRespone<Event>>() {
-                override fun onData(data: BaseRespone<Event>) {
+            .setResponseCallBack(object : Result<BaseResponse<Event>>() {
+                override fun onData(data: BaseResponse<Event>) {
                     Log.i(TAG, "onData,BaseRespone:${data.data.id}")
                 }
             })
@@ -99,8 +106,39 @@ class CommonActivity : AppCompatActivity() {
         val data =
             arrayListOf(AreaBean().apply { areaId = 1 }, AreaBean().apply { areaId = 2 })
 
+        IpcManager.getService<InfoService>().transformAreaBeans(data)
 
-        debugI("transformAreaBeanList result->${IpcManager.getService<InfoService>().transformAreaBeans(data)}")
+    }
+
+    fun getBigByteArray(view: View) {
+
+        thread {
+            val data = IpcManager.getService<InfoService>().getBigByteArray()
+
+
+            Log.i(
+                TAG,
+                "getBigByteArray size->${data.size}, data(0,20)->${
+                    data.copyOfRange(0, 20).contentToString()
+                }"
+            )
+        }
+
+    }
+
+    fun asyncGetBigByteArray(view: View) {
+
+        IpcManager.getService<InfoService>().asyncGetBigByteArray(object : Result<ByteArray>() {
+            override fun onData(data: ByteArray) {
+                Log.i(
+                    TAG,
+                    "asyncGetBigByteArray size->${data.size}, data(0,20)->${
+                        data.copyOfRange(0, 20).contentToString()
+                    }"
+                )
+            }
+        })
+
 
     }
 

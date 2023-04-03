@@ -1,35 +1,53 @@
 package com.zclever.ipc.core
 
 import android.os.Process
-import com.google.gson.reflect.TypeToken
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
 
 
 const val REQUEST_TYPE_CREATE = 1
 const val REQUEST_TYPE_INVOKE = 2
+const val BINDER_MAX_TRANSFORM_JSON_LENGTH = 520_000 //根据parcel序列化结合接口设计，最大能传输的json字符串长度
 
 /**
  * 请求对象
  */
-data class Request(
+data class RequestBase(
     val type: Int = REQUEST_TYPE_INVOKE, //调用类型，分为构造服务实例和方法调用
     val targetClazzName: String, //目标服务实现类类名
-    val functionKey: String = "", //方法id，就是KFunction的signature()
-    val valueParametersMap: Map<String, String> = HashMap(), //参数具体值，name=>值的json字符串
-    val invokeID: String = "", //回调方式的唯一标识
-    val dataType: String = "", //回调的数据类的类型，其实就是我们写的泛型信息，就是我们写的泛型的实参的类的全名称
     val pid: Int = Process.myPid(),
-    val sharedMemoryParameterIndex: Int = -1,//共享内存下标
-    val sharedMemoryLength: Int = 0//共享内存存的数据实际长度
+    val functionKey: String = "", //方法id，就是KFunction的signature()
+    val callbackKey: String = "", //异步回调实体的Map的key
+    val transformType: TransformType = TransformType.BINDER,//传输方式
+    val paramValueBytesLen: Int = 0, // 参值json序列化后的utf-8编码后的字节长度
 )
 
 
-/**
- * 响应对象
- */
-data class Response(var invokeID: String, val data: Any) {
 
-    constructor(data: Any) : this("", data)
 
+data class RequestParam(
+    val paramValueMap: Map<String, String> = HashMap(), //参数具体值，name=>值的json字符串
+)
+
+internal fun RequestBase.createNoParameterRequest(paramValueBytesLen: Int) =
+    RequestBase(
+        type,
+        targetClazzName,
+        pid,
+        functionKey,
+        callbackKey,
+        TransformType.SHARED_MEMORY,
+        paramValueBytesLen,
+    )
+
+enum class TransformType {
+    BINDER, SHARED_MEMORY
 }
+
+/**
+ * 直接返回响应对象
+ */
+data class Response(val dataStr: String?, val dataByteSize: Int = -1)
+
+/**
+ * 回调响应对象
+ */
+data class CallbackResponse(var invokeKey: String, val data: String?, val dataByteSize: Int = 0)

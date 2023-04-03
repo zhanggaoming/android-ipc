@@ -3,11 +3,10 @@ package com.zclever.ipc.core.server
 import android.app.Service
 import android.content.Intent
 import android.os.*
-import android.util.Log
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.memoryfile.*
+import com.zclever.ipc.media.IMediaCallback
 import com.zclever.ipc.media.IMediaConnector
-import com.zclever.ipc.media.IMediaReceiver
 import java.lang.ref.WeakReference
 
 class VideoCenter : Service() {
@@ -25,12 +24,14 @@ class VideoCenter : Service() {
 
 
     private val pictureSharedMemory by lazy {
-        IpcSharedMemory.create(IpcManager.config.mediaMemoryCapacity)
+        MemoryFile("picture", IpcManager.config.mediaMemoryCapacity)
     }
 
     private val frameSharedMemory by lazy {
-        IpcSharedMemory.create(IpcManager.config.mediaMemoryCapacity)
+        MemoryFile("frame", IpcManager.config.mediaMemoryCapacity)
     }
+
+    var mediaCallback: IMediaCallback? = null
 
     override fun onBind(intent: Intent?): IBinder = connector
 
@@ -48,30 +49,32 @@ class VideoCenter : Service() {
             ServiceCache.videoService!!.stopTakeFrame()
         }
 
-        override fun obtainPictureSharedMemory(): IpcSharedMemory = pictureSharedMemory
+        override fun obtainPictureSharedMemory(): ParcelFileDescriptor =
+            pictureSharedMemory.parcelFileDescriptor
 
-        override fun obtainFrameSharedMemory(): IpcSharedMemory = frameSharedMemory
+        override fun obtainFrameSharedMemory(): ParcelFileDescriptor =
+            frameSharedMemory.parcelFileDescriptor
+
+        override fun setMediaCallback(callback: IMediaCallback?) {
+            mediaCallback = callback
+        }
+
     }
 
     internal fun onTakePicture(
         byteArray: ByteArray, width: Int, height: Int, size: Int, pictureFormat: Int
     ) {
-        if (pictureSharedMemory.canWrite()){
+        pictureSharedMemory.outputStream.write(byteArray)
 
-            debugI("VideoCenter onTakePicture:width->$width,hegiht->$height,size->$size")
-            pictureSharedMemory.writeVideoStruct(IpcSharedMemory.VideoStruct(false,pictureFormat,width, height, size,byteArray))
-
-        }
-
+        mediaCallback?.onPicture(width, height, size, pictureFormat)
     }
 
     internal fun onTakeFrame(byteArray: ByteArray, width: Int, height: Int, size: Int, type: Int) {
 
-        if (frameSharedMemory.canWrite()){
+        frameSharedMemory.outputStream.write(byteArray)
 
-            frameSharedMemory.writeVideoStruct(IpcSharedMemory.VideoStruct(false,type,width, height, size,byteArray))
+        mediaCallback?.onFrame(width, height, size, type)
 
-        }
     }
 
 

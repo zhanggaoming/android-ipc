@@ -6,6 +6,8 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 
 /**
  * 采用gson序列化，moshi之前测试还有问题
@@ -30,7 +32,9 @@ internal object GsonInstance {
 
     fun <T> fromJson(json: String?, type: Type) = gson.fromJson<T>(json, type)
 
-    fun fromJson(json: String?, dataClass: KClass<*>) = fromJson(json, dataClass.java)
+    fun <T> fromJson(json: String?, type: KType) = gson.fromJson<T>(json, type.javaType)
+
+    inline fun <reified T> fromJson(json: String?) = gson.fromJson(json,T::class.java)
 
     fun obtainSuperclassTypeParameter(subclass: Class<*>): Type? {
         val superclass: Type = subclass.genericSuperclass

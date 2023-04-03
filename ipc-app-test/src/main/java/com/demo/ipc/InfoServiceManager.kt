@@ -3,7 +3,6 @@ package com.demo.ipc
 import android.util.Log
 import com.ipc.extend.test.*
 import com.zclever.ipc.core.*
-import java.lang.reflect.TypeVariable
 import kotlin.concurrent.thread
 
 
@@ -27,7 +26,7 @@ object InfoServiceManager : InfoService {
     }
 
     override fun sendBigData(data: ByteArray) {
-        Log.i(TAG, "sendBigData: ${data.contentToString()}")
+        Log.i(TAG, "sendBigData 0-20: ${data.copyOfRange(0, 20).contentToString()},size->${data.size}")
     }
 
     override fun getEnum(code: Code): Code {
@@ -44,7 +43,7 @@ object InfoServiceManager : InfoService {
         thread {
             while (true) {
                 mCallBack?.onData(Event(count++))
-                responeCallBack?.onData(BaseRespone(Event(id = count)))
+                responseCallBack?.onData(BaseResponse(Event(id = count)))
                 Thread.sleep(2000)
             }
         }
@@ -54,18 +53,33 @@ object InfoServiceManager : InfoService {
         mCallBack = callBack
     }
 
-    private var responeCallBack: Result<BaseRespone<Event>>? = null
+    private var responseCallBack: Result<BaseResponse<Event>>? = null
 
-    override fun setResponeCallBack(callBack: Result<BaseRespone<Event>>) {
-        responeCallBack = callBack
+    override fun setResponseCallBack(callBack: Result<BaseResponse<Event>>) {
+        responseCallBack = callBack
     }
 
 
     override fun transformAreaBeans(data: ArrayList<AreaBean>): Int {
 
-        data.forEach {
-            debugI(it.toString())
+        data.forEachIndexed { index, bean ->
+            Log.i(TAG, "transformAreaBeans: data[$index]->$bean")
         }
+
+
         return 1
+    }
+
+    override fun getBigByteArray(): ByteArray {
+        return ByteArray(800_000)
+    }
+
+    private var asyncBigByteArrayCallback:Result<ByteArray>?=null
+
+    override fun asyncGetBigByteArray(callBack: Result<ByteArray>) {
+        asyncBigByteArrayCallback=callBack
+        thread {
+            asyncBigByteArrayCallback?.onData(ByteArray(1024*1024*2))
+        }
     }
 }
