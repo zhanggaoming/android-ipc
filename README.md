@@ -4,7 +4,7 @@
 1. 支持自定义接口来实现跨进程通信，比传统的aidl的方式更简单
 2. 支持异步回调的方式返回数据，也支持设置监听器的方式
 3. 服务注册支持自动注册
-4. 突破binder驱动限制，支持大数据传输(目前还在完善中，目前已支持客户端进程向服务端进程传输大于1M以上的字节数据)
+4. 突破binder驱动限制，支持大数据传输(暂时不支持Android11含以上，下一版优化)
 
 ## 引入库
 
@@ -316,19 +316,6 @@ class CommonActivity : AppCompatActivity() {
 
     }
 
-
-}
-```
-
-**3.**传输大数据：
-
-- 传输大数据需要设计接口的时候，形参使用***BigData***修饰就可以了。需要注意的是在一个函数里面只能出现一次，而且修饰的类型必须为字节数组，不能是其他类型，考虑到需要传输大数据的场景用字节数组就足够了，接口设计如下*sendBigData*示例：
-
-```
-@BindImpl("com.demo.ipc.InfoServiceManager")
-interface InfoService {
-
-    fun sendBigData(@BigData data: ByteArray)
 
 }
 ```
