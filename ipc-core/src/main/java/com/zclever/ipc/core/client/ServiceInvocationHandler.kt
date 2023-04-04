@@ -58,29 +58,31 @@ internal class ServiceInvocationHandler(
                 val response =
                     if (requestParamJson.length < BINDER_MAX_TRANSFORM_JSON_LENGTH) {//binder传输
 
-                        var responseObj = GsonInstance.fromJson<Response>(
-                            connector.connect(
-                                requestBase.toJson(),
-                                requestParamJson
-                            )
-                        )
+                        synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
 
-                        if (responseObj.dataByteSize > 0) {
-                            Response(
-                                ClientCache.serverResponseSharedMemory!!.readJsonStr(
-                                    responseObj.dataByteSize
+                            var responseObj = GsonInstance.fromJson<Response>(
+                                connector.connect(
+                                    requestBase.toJson(),
+                                    requestParamJson
                                 )
-                            )//服务端返回共享内存写入结果后，客户端再读
-                        } else {
-                            responseObj
-                        }
+                            )
 
+                            if (responseObj.dataByteSize > 0) {
+                                Response(
+                                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
+                                        responseObj.dataByteSize
+                                    )
+                                )//服务端返回共享内存写入结果后，客户端再读
+                            } else {
+                                responseObj
+                            }
+                        }
 
                     } else {//共享内存传输参数
 
                         requestParamJson.encodeToByteArray().let { paramByteArray ->
 
-                            synchronized(ClientCache.clientSharedMemory!!) { //保证同步
+                            synchronized(ClientCache.serverResponseSharedMemory!!) { //保证同步
 
                                 ClientCache.clientSharedMemory!!.writeByteArray(paramByteArray) //把utf-8编码的字节数组写入共享内存区域
 
