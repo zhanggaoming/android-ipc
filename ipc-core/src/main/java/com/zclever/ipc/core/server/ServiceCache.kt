@@ -1,8 +1,8 @@
 package com.zclever.ipc.core.server
 
-import android.os.MemoryFile
 import android.os.ParcelFileDescriptor
 import com.zclever.ipc.IClient
+import com.zclever.ipc.core.shared_memory.AbstractSharedMemory
 import kotlin.reflect.KFunction
 
 /**
@@ -14,10 +14,10 @@ internal object ServiceCache {
 
     val kInstanceMap = HashMap<String, Any?>() //存实现类对应的实例,只允许单例
 
-    val serverCallbackMemoryMap: MutableMap<Int, MemoryFile> =
+    val serverCallbackMemoryMap: MutableMap<Int, AbstractSharedMemory> =
         HashMap() //服务端缓存回调共享内存 pid=>MemoryFile
 
-    val serverResponseMemoryMap: MutableMap<Int, MemoryFile> =
+    val serverResponseMemoryMap: MutableMap<Int, AbstractSharedMemory> =
         HashMap() //服务端直接返回的共享内存map pid=>MemoryFile
 
     val clientSharedMemoryMap: MutableMap<Int, ParcelFileDescriptor> =

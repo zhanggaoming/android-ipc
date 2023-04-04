@@ -2,17 +2,17 @@ package com.zclever.ipc.core.server
 
 import android.os.IBinder
 import android.os.IInterface
-import android.os.MemoryFile
 import android.os.ParcelFileDescriptor
 import android.os.RemoteException
 import android.util.ArrayMap
+import com.zclever.ipc.core.shared_memory.AbstractSharedMemory
 
 /**
  * 维护客户端的远程IBinder回调实例
  */
 internal class RemoteClientList<T : IInterface>(
-    val callbackSharedMemoryMap: MutableMap<Int, MemoryFile>,
-    val responseSharedMemoryMap: MutableMap<Int, MemoryFile>,
+    val callbackSharedMemoryMap: MutableMap<Int, AbstractSharedMemory>,
+    val responseSharedMemoryMap: MutableMap<Int, AbstractSharedMemory>,
     val clientSharedMemoryMap: MutableMap<Int, ParcelFileDescriptor>
 ) {
 

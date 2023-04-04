@@ -2,9 +2,11 @@ package com.zclever.ipc.core.server
 
 import android.app.Service
 import android.content.Intent
-import android.os.*
-import com.zclever.ipc.core.*
-import com.zclever.ipc.core.memoryfile.*
+import android.os.IBinder
+import android.os.ParcelFileDescriptor
+import com.zclever.ipc.core.IpcManager
+import com.zclever.ipc.core.shared_memory.SharedMemoryFactory
+import com.zclever.ipc.core.shared_memory.writeByteArray
 import com.zclever.ipc.media.IMediaCallback
 import com.zclever.ipc.media.IMediaConnector
 import java.lang.ref.WeakReference
@@ -24,11 +26,11 @@ class VideoCenter : Service() {
 
 
     private val pictureSharedMemory by lazy {
-        MemoryFile("picture", IpcManager.config.mediaMemoryCapacity)
+        SharedMemoryFactory.create("picture", IpcManager.config.mediaMemoryCapacity)
     }
 
     private val frameSharedMemory by lazy {
-        MemoryFile("frame", IpcManager.config.mediaMemoryCapacity)
+        SharedMemoryFactory.create("frame", IpcManager.config.mediaMemoryCapacity)
     }
 
     var mediaCallback: IMediaCallback? = null
@@ -64,14 +66,14 @@ class VideoCenter : Service() {
     internal fun onTakePicture(
         byteArray: ByteArray, width: Int, height: Int, size: Int, pictureFormat: Int
     ) {
-        pictureSharedMemory.outputStream.write(byteArray)
+        pictureSharedMemory.writeByteArray(byteArray)
 
         mediaCallback?.onPicture(width, height, size, pictureFormat)
     }
 
     internal fun onTakeFrame(byteArray: ByteArray, width: Int, height: Int, size: Int, type: Int) {
 
-        frameSharedMemory.outputStream.write(byteArray)
+        frameSharedMemory.writeByteArray(byteArray)
 
         mediaCallback?.onFrame(width, height, size, type)
 

@@ -4,7 +4,7 @@ import com.zclever.ipc.IClient
 import com.zclever.ipc.core.CallbackResponse
 import com.zclever.ipc.core.GsonInstance
 import com.zclever.ipc.core.debugD
-import com.zclever.ipc.core.memoryfile.readJsonStr
+import com.zclever.ipc.core.shared_memory.readJsonStr
 
 /**
  * 对于客户端来讲的，这里是接受服务端返回的回调数据

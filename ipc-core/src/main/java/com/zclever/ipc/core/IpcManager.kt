@@ -4,15 +4,18 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.*
+import android.os.Build
+import android.os.IBinder
+import android.os.Process
+import android.os.RemoteException
 import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.client.*
-import com.zclever.ipc.core.memoryfile.parcelFileDescriptor
 import com.zclever.ipc.core.server.ServiceCache
 import com.zclever.ipc.core.server.ServiceCenter
 import com.zclever.ipc.core.server.VideoService
+import com.zclever.ipc.core.shared_memory.SharedMemoryFactory
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
@@ -28,7 +31,7 @@ typealias OnServerDeath = () -> Unit
  */
 object IpcManager {
 
-    internal val useSharedMemory: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
+    internal val useSharedMemory: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
     lateinit var connector: IConnector
 
@@ -159,7 +162,7 @@ object IpcManager {
             connector.registerClient(Client, Process.myPid())
 
             ClientCache.clientSharedMemory =
-                MemoryFile("Client-${Process.myPid()}", config.sharedMemoryCapacity)
+                SharedMemoryFactory.create("Client-${Process.myPid()}", config.sharedMemoryCapacity)
 
             connector.exchangeSharedMemory(
                 Process.myPid(),

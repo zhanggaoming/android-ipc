@@ -3,16 +3,15 @@ package com.zclever.ipc.core.server
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.os.MemoryFile
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.zclever.ipc.IClient
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.memoryfile.FileDescriptorWrapper
-import com.zclever.ipc.core.memoryfile.parcelFileDescriptor
-import com.zclever.ipc.core.memoryfile.readJsonStr
-import com.zclever.ipc.core.memoryfile.writeByteArray
+import com.zclever.ipc.core.shared_memory.SharedMemoryFactory
+import com.zclever.ipc.core.shared_memory.readJsonStr
+import com.zclever.ipc.core.shared_memory.writeByteArray
 import kotlin.reflect.KParameter
 
 /**
@@ -107,9 +106,7 @@ class ServiceCenter : Service() {
                     } else {
                         val resultByteArray = resultJson.encodeToByteArray()
 
-                        ServiceCache.serverResponseMemoryMap[requestBase.pid]!!.writeByteArray(
-                                resultByteArray
-                            )
+                        ServiceCache.serverResponseMemoryMap[requestBase.pid]!!.writeByteArray(resultByteArray)
 
                         Response(null, resultByteArray.size).toJson()
                     }
@@ -142,12 +139,12 @@ class ServiceCenter : Service() {
 
             ServiceCache.clientSharedMemoryMap[clientPid] = clientFd
 
-            return FileDescriptorWrapper(MemoryFile(
+            return FileDescriptorWrapper(SharedMemoryFactory.create(
                 "ServerResponse-$clientPid", IpcManager.config.sharedMemoryCapacity
             ).let {
                 ServiceCache.serverResponseMemoryMap[clientPid] = it
                 it.parcelFileDescriptor
-            }, MemoryFile(
+            }, SharedMemoryFactory.create(
                 "ServerCallback-$clientPid", IpcManager.config.sharedMemoryCapacity
             ).let {
                 ServiceCache.serverCallbackMemoryMap[clientPid] = it

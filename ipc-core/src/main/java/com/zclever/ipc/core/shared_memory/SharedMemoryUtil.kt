@@ -1,19 +1,26 @@
-package com.zclever.ipc.core.memoryfile
+package com.zclever.ipc.core.shared_memory
 
 import android.os.MemoryFile
 import android.os.ParcelFileDescriptor
+import android.os.SharedMemory
+import android.util.Log
+import com.zclever.ipc.core.debugD
 import com.zclever.ipc.core.inputStream
 import com.zclever.ipc.core.outputStream
 import com.zclever.ipc.core.safeAs
 import java.io.FileDescriptor
 import kotlin.math.ceil
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.functions
 import kotlin.reflect.jvm.isAccessible
 
 /**
  * 共享内存工具类
  */
-object MemoryFileUtil {
+internal object MemoryFileUtil {
 
     private val memoryFileMemberMap by lazy {
         MemoryFile::class.java.declaredFields.filter {
@@ -35,7 +42,9 @@ object MemoryFileUtil {
         }.toMap()
     }
 
+
 }
+
 
 internal fun MemoryFile.readJsonStr(size: Int) = inputStream.use { inputStream ->
     String(ByteArray(size).also {
@@ -78,5 +87,13 @@ internal fun ParcelFileDescriptor.writeByteArray(data: ByteArray) = outputStream
 internal fun Int.getNext4KMultiple(): Int {
     return (ceil(toDouble() / 4096).toInt()) * 4096
 }
+
+
+internal val SharedMemory.parcelFileDescriptor: ParcelFileDescriptor
+    get() = ParcelFileDescriptor.fromFd(SharedMemory::class.declaredFunctions
+        .first { it.name == "getFd" }
+        .apply { isAccessible = true }.call(this).safeAs()!!
+    )
+
 
 

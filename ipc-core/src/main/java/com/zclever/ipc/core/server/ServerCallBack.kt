@@ -2,7 +2,7 @@ package com.zclever.ipc.core.server
 
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.GsonInstance
-import com.zclever.ipc.core.memoryfile.writeByteArray
+import com.zclever.ipc.core.shared_memory.writeByteArray
 import java.lang.UnsupportedOperationException
 
 /**
@@ -31,16 +31,16 @@ internal class ServerCallBack(
 
         } else {
 
-            val memoryFile = ServiceCache.serverCallbackMemoryMap[pid]!!
+            val sharedMemory = ServiceCache.serverCallbackMemoryMap[pid]!!
 
-            synchronized(memoryFile) {
+            synchronized(sharedMemory) {
                 ServiceCache.remoteClients.getClientByPid(pid)?.onReceive(
                         GsonInstance.toJson(
                             CallbackResponse(
                                 callbackKey,
                                 null,
                                 dataJson.encodeToByteArray()
-                                    .also { memoryFile.writeByteArray(it) }.size
+                                    .also { sharedMemory.writeByteArray(it) }.size
                             )
                         )
                     )

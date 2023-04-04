@@ -2,8 +2,8 @@ package com.zclever.ipc.core.client
 
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
-import com.zclever.ipc.core.memoryfile.readJsonStr
-import com.zclever.ipc.core.memoryfile.writeByteArray
+import com.zclever.ipc.core.shared_memory.readJsonStr
+import com.zclever.ipc.core.shared_memory.writeByteArray
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
