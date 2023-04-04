@@ -4,7 +4,7 @@
 1. 支持自定义接口来实现跨进程通信，比传统的aidl的方式更简单
 2. 支持异步回调的方式返回数据，也支持设置监听器的方式
 3. 服务注册支持自动注册
-4. 突破binder驱动限制，支持大数据传输(暂时不支持Android11含以上，下一版优化)
+4. 突破binder驱动限制，支持大数据传输(已支持到最新版本Android14)
 
 ## 引入库
 
@@ -23,7 +23,7 @@ allprojects {
 
 ```groovy
 dependencies {
-	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:3.1.0'
+	implementation 'com.github.zhanggaoming.android-ipc:ipc-core:3.1.1'
 }
 ```
 
@@ -209,7 +209,7 @@ applay plugin:'kotlin-kapt'
 
 dependencies {
 	...
-    kapt 'com.github.zhanggaoming.android-ipc:ipc-compiler:3.1.0'
+    kapt 'com.github.zhanggaoming.android-ipc:ipc-compiler:3.1.1'
 }
 
 ```
