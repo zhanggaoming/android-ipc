@@ -59,6 +59,7 @@ class CommonActivity : AppCompatActivity() {
 
     fun sum(view: View) {
 
+
         IpcManager.getService<InfoService>().sum(1, 2, 3, object : Result<Int>() {
             override fun onData(data: Int) {
                 runOnUiThread {
@@ -144,3 +145,5 @@ class CommonActivity : AppCompatActivity() {
 
 
 }
+
+abstract class ComparableCallback<T:Comparable<T>>:Result<T>()

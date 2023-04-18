@@ -4,6 +4,9 @@ import com.zclever.ipc.annotation.BindImpl
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.jvm.javaType
 
 class Analyzer(private val interfaceClazz: KClass<*>) {
 
@@ -38,9 +41,17 @@ class Analyzer(private val interfaceClazz: KClass<*>) {
 
             kFunction.parameters.forEachIndexed { index, kParameter ->
 
-                if (kParameter.type.classifier == Result::class && index != kFunction.parameters.lastIndex) {//如果是Result作为参数则必须是最后一个参数
+                val parameterKClazz = kParameter.type.classifier.safeAs<KClass<*>>()!!
 
-                    throw IllegalAccessException("the Result callback can only appear once and must be the last parameter in function. $kFunction")
+                if (parameterKClazz.isSubclassOf(Result::class)) {
+
+                    if (parameterKClazz!=Result::class){
+                        throw IllegalAccessException("the  ${kParameter.name} type must be ${Result::class.java.canonicalName} in function. $kFunction")
+                    }
+
+                    if (index != kFunction.parameters.lastIndex) {//如果是Result作为参数则必须是最后一个参数
+                        throw IllegalAccessException("the Result callback can only appear once and must be the last parameter in function. $kFunction")
+                    }
 
                 }
             }
