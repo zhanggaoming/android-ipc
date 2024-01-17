@@ -22,7 +22,7 @@ import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.staticFunctions
 
-typealias OpenComplete = () -> Unit
+typealias OpenComplete = (Boolean) -> Unit
 
 typealias OnServerDeath = () -> Unit
 
@@ -105,17 +105,24 @@ object IpcManager {
     }
 
     internal var openComplete: OpenComplete? = null
-
-    fun open(packageName: String, openComplete: OpenComplete? = null) {
+    internal var openMediaComplete: OpenComplete? = null
+    fun open(
+        packageName: String,
+        openMediaComplete: OpenComplete? = null,
+        openComplete: OpenComplete? = null
+    ) {
         this.packageName = packageName
         this.openComplete = openComplete
+        this.openMediaComplete = openMediaComplete
         val componentName = ComponentName(packageName, ServiceCenter::class.java.name)
         val intent = Intent()
         intent.component = componentName
-        appContext.bindService(intent, Connection, Context.BIND_AUTO_CREATE)
-
-        if (config.openMedia) {
-            VideoClient.open()
+        if (!appContext.bindService(intent, Connection, Context.BIND_AUTO_CREATE)) {
+            openComplete?.invoke(false)
+        } else {
+            if (config.openMedia) {
+                VideoClient.open()
+            }
         }
     }
 
@@ -142,8 +149,6 @@ object IpcManager {
 
             ClientCache.dataCallback.clear()
             ClientCache.instanceMap.clear()
-            //重连
-            open(packageName, openComplete)
         }
     }
 
@@ -172,7 +177,7 @@ object IpcManager {
                 ClientCache.serverCallbackSharedMemory = it.callbackFileDescriptor
             }
 
-            openComplete?.invoke()
+            openComplete?.invoke(true)
 
             debugI("onServiceConnected: $connector")
         }
@@ -190,8 +195,9 @@ object IpcManager {
             ClientCache.serverCallbackSharedMemory = null
             ClientCache.serverResponseSharedMemory?.close()
             ClientCache.serverResponseSharedMemory = null
-            //open(packageName, openComplete)
         }
+
+
     }
 
     fun <T : Any> getService(javaClazz: Class<T>): T = getService(javaClazz.kotlin)

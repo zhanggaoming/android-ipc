@@ -24,7 +24,15 @@ internal object VideoClient : IMediaManager, ServiceConnection, IMediaCallback.S
         val mediaComponentName = ComponentName(IpcManager.packageName, VideoCenter::class.java.name)
         val mediaIntent = Intent()
         mediaIntent.component = mediaComponentName
-        IpcManager.appContext.bindService(mediaIntent, VideoClient, Context.BIND_AUTO_CREATE)
+        if (!IpcManager.appContext.bindService(
+                mediaIntent,
+                VideoClient,
+                Context.BIND_AUTO_CREATE
+            )
+        ) {
+            IpcManager.openMediaComplete?.invoke(false)
+        }
+
     }
 
 
@@ -70,12 +78,8 @@ internal object VideoClient : IMediaManager, ServiceConnection, IMediaCallback.S
             //反馈给客户端
             IpcManager.serverDeath?.invoke()
 
-            connector.setMediaCallback(null)
             pictureIpcSharedMemory?.close()
             previewIpcSharedMemory?.close()
-
-            open()
-            IpcManager.openComplete?.invoke()
         }
     }
 
@@ -97,6 +101,8 @@ internal object VideoClient : IMediaManager, ServiceConnection, IMediaCallback.S
         previewIpcSharedMemory = connector.obtainFrameSharedMemory()
 
         connector.setMediaCallback(this)
+
+        IpcManager.openMediaComplete?.invoke(true)
     }
 
 
