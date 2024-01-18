@@ -107,11 +107,8 @@ internal object VideoClient : IMediaManager, ServiceConnection, IMediaCallback.S
 
 
     override fun onServiceDisconnected(name: ComponentName?) {
-        connector.setMediaCallback(null)
         pictureIpcSharedMemory?.close()
         previewIpcSharedMemory?.close()
-
-        // open()
     }
 
     override fun onPicture(width: Int, height: Int, size: Int, format: Int) {
