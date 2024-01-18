@@ -1,11 +1,11 @@
 plugins {
     id 'java-library'
     id 'kotlin'
-    id 'maven'
+    id 'com.github.dcendents.android-maven'
 }
 //apply from:'../gradle/publish_jar.gradle'
 
-group 'com.github.zhanggaoming'
+//group 'com.github.zhanggaoming'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
