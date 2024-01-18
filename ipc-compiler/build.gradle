@@ -3,7 +3,7 @@ plugins {
     id 'kotlin'
     id 'maven'
 }
-apply from:'../gradle/publish_jar.gradle'
+//apply from:'../gradle/publish_jar.gradle'
 
 group 'com.github.zhanggaoming'
 
@@ -24,8 +24,8 @@ compileKotlin {
 
 dependencies {
     api project(path: ':ipc-annotation')
-    api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    api "com.squareup:kotlinpoet:1.9.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "com.squareup:kotlinpoet:1.9.0"
 }
 
 //task sourcesJar(type: Jar, dependsOn: classes) {

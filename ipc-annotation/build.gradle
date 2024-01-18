@@ -4,7 +4,7 @@ plugins {
     id 'maven'
 }
 
-apply from:'../gradle/publish_jar.gradle'
+//apply from:'../gradle/publish_jar.gradle'
 
 group 'com.github.zhanggaoming'
 
