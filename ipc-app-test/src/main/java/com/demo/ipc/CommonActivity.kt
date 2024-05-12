@@ -22,7 +22,7 @@ class CommonActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_common)
-        IpcManager.config(Config.builder().configDebug(true).build())
+        IpcManager.config(Config.builder().configDebug(true).configSharedMemoryCapacity(2*1024*1024).build())
         IpcManager.init(this)
         IpcManager.open("com.demo.ipcdemo") {
             runOnUiThread {

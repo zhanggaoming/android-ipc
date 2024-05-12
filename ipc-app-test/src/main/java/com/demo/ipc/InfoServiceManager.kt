@@ -71,7 +71,7 @@ object InfoServiceManager : InfoService {
     }
 
     override fun getBigByteArray(): ByteArray {
-        return ByteArray(800_000)
+        return ByteArray(258_000)
     }
 
     private var asyncBigByteArrayCallback:Result<ByteArray>?=null
@@ -79,7 +79,7 @@ object InfoServiceManager : InfoService {
     override fun asyncGetBigByteArray(callBack: Result<ByteArray>) {
         asyncBigByteArrayCallback=callBack
         thread {
-            asyncBigByteArrayCallback?.onData(ByteArray(1024*1024*2))
+            asyncBigByteArrayCallback?.onData(ByteArray(254_998))
         }
     }
 }

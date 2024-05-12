@@ -22,15 +22,17 @@ internal class ServerCallBack(
 
         val dataJson = GsonInstance.toJson(data)
 
-        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJson.length}")
+        val dataJsonByteArray=dataJson.encodeToByteArray()
 
-        if (dataJson.length < BINDER_MAX_TRANSFORM_JSON_LENGTH) {
+        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJsonByteArray.size}")
 
+        if (dataJsonByteArray.size < BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE) {
+            debugD("onData use binder")
             ServiceCache.remoteClients.getClientByPid(pid)
                 ?.onReceive(GsonInstance.toJson(CallbackResponse(callbackKey, dataJson)))
 
         } else {
-
+            debugD("onData use shared memory")
             val sharedMemory = ServiceCache.serverCallbackMemoryMap[pid]!!
 
             synchronized(sharedMemory) {
@@ -39,7 +41,7 @@ internal class ServerCallBack(
                             CallbackResponse(
                                 callbackKey,
                                 null,
-                                dataJson.encodeToByteArray()
+                                dataJsonByteArray
                                     .also { sharedMemory.writeByteArray(it) }.size
                             )
                         )

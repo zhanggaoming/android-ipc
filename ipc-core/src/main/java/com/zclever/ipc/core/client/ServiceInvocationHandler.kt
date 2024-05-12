@@ -46,8 +46,6 @@ internal class ServiceInvocationHandler(
 
                 val requestParamJson = GsonInstance.toJson(RequestParam(paramValueMap))
 
-                debugD("invoke requestParamJson length ->${requestParamJson.length}, content->$requestParamJson")
-
 
                 var requestBase = RequestBase(
                     targetClazzName = targetClazzName,
@@ -55,8 +53,12 @@ internal class ServiceInvocationHandler(
                     callbackKey = if (callbackInstance) signature else "",
                 )
 
+                val paramByteArray = requestParamJson.encodeToByteArray()
+
+                debugD("invoke requestParamJson byte size ->${paramByteArray.size}, content->$requestParamJson")
+
                 val response =
-                    if (requestParamJson.length < BINDER_MAX_TRANSFORM_JSON_LENGTH) {//binder传输
+                    if (paramByteArray.size < BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE) {//binder传输
 
                         synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
 
@@ -80,29 +82,26 @@ internal class ServiceInvocationHandler(
 
                     } else {//共享内存传输参数
 
-                        requestParamJson.encodeToByteArray().let { paramByteArray ->
+                        synchronized(ClientCache.serverResponseSharedMemory!!) { //保证同步
 
-                            synchronized(ClientCache.serverResponseSharedMemory!!) { //保证同步
+                            ClientCache.clientSharedMemory!!.writeByteArray(paramByteArray) //把utf-8编码的字节数组写入共享内存区域
 
-                                ClientCache.clientSharedMemory!!.writeByteArray(paramByteArray) //把utf-8编码的字节数组写入共享内存区域
+                            val responseStr = connector.connect(             //写完共享内存通知服务端读取
+                                GsonInstance.toJson(requestBase.createNoParameterRequest(
+                                    paramByteArray.size
+                                ).apply { requestBase = this }), null
+                            )
 
-                                val responseStr = connector.connect(             //写完共享内存通知服务端读取
-                                    GsonInstance.toJson(requestBase.createNoParameterRequest(
-                                        paramByteArray.size
-                                    ).apply { requestBase = this }), null
-                                )
+                            var responseObj = GsonInstance.fromJson<Response>(responseStr)
 
-                                var responseObj = GsonInstance.fromJson<Response>(responseStr)
-
-                                if (responseObj.dataStr.isNullOrEmpty()) {
-                                    Response(
-                                        ClientCache.serverResponseSharedMemory!!.readJsonStr(
-                                            responseObj.dataByteSize
-                                        )
-                                    )//服务端返回共享内存写入结果后，客户端再读
-                                } else {
-                                    responseObj
-                                }
+                            if (responseObj.dataStr.isNullOrEmpty()) {
+                                Response(
+                                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
+                                        responseObj.dataByteSize
+                                    )
+                                )//服务端返回共享内存写入结果后，客户端再读
+                            } else {
+                                responseObj
                             }
                         }
                     }

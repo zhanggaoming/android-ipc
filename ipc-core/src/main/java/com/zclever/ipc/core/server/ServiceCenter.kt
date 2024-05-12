@@ -100,11 +100,13 @@ class ServiceCenter : Service() {
 
                     val resultJson = invokeResult.toJson()
 
+                    val resultByteArray = resultJson.encodeToByteArray()
 
-                    if (resultJson.length < BINDER_MAX_TRANSFORM_JSON_LENGTH) {
+                    if (resultByteArray.size < BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE) {
+                        debugD("return use binder")
                         Response(resultJson).toJson()
                     } else {
-                        val resultByteArray = resultJson.encodeToByteArray()
+                        debugD("return use shared memory")
 
                         ServiceCache.serverResponseMemoryMap[requestBase.pid]!!.writeByteArray(resultByteArray)
 
