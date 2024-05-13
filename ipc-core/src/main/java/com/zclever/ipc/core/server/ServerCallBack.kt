@@ -22,11 +22,13 @@ internal class ServerCallBack(
 
         val dataJson = GsonInstance.toJson(data)
 
+        val parcelSize=ParcelSizeHelper.getStringParcelSize(dataJson)
+
         val dataJsonByteArray=dataJson.encodeToByteArray()
 
-        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJsonByteArray.size}")
+        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJsonByteArray.size}，parcelSize->${parcelSize}")
 
-        if (dataJsonByteArray.size < BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE) {
+        if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {
             debugD("onData use binder")
             ServiceCache.remoteClients.getClientByPid(pid)
                 ?.onReceive(GsonInstance.toJson(CallbackResponse(callbackKey, dataJson)))

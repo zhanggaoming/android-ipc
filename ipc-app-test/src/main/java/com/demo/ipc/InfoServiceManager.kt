@@ -1,9 +1,11 @@
 package com.demo.ipc
 
+import android.os.Binder
 import android.util.Log
 import com.ipc.extend.test.*
 import com.zclever.ipc.core.*
 import kotlin.concurrent.thread
+import kotlin.random.Random
 
 
 object InfoServiceManager : InfoService {
@@ -39,7 +41,6 @@ object InfoServiceManager : InfoService {
     private var mCallBack: Result<Event>? = null
 
     init {
-
         thread {
             while (true) {
                 mCallBack?.onData(Event(count++))
@@ -71,7 +72,9 @@ object InfoServiceManager : InfoService {
     }
 
     override fun getBigByteArray(): ByteArray {
-        return ByteArray(258_000)
+        return Random.nextBytes(Random.nextInt(1024*1024).also {
+            Log.i(TAG, "getBigByteArray size->${it}")
+        })
     }
 
     private var asyncBigByteArrayCallback:Result<ByteArray>?=null
@@ -79,7 +82,9 @@ object InfoServiceManager : InfoService {
     override fun asyncGetBigByteArray(callBack: Result<ByteArray>) {
         asyncBigByteArrayCallback=callBack
         thread {
-            asyncBigByteArrayCallback?.onData(ByteArray(254_998))
+            asyncBigByteArrayCallback?.onData(Random.nextBytes(Random.nextInt(1024*500).also {
+                Log.i(TAG, "asyncGetBigByteArray size->${it}")
+            }))
         }
     }
 }

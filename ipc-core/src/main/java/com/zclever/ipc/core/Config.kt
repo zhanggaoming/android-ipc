@@ -12,8 +12,8 @@ class Config private constructor(builder: Builder) {
     val mediaMemoryCapacity = builder.mediaMemoryCapacity
 
     companion object {
-        const val DEFAULT_MEDIA_MEMORY_SIZE = 1280 * 720 * 4 //
-        const val SHARED_MEMORY_DEFAULT_SIZE = 5 * 1024 * 1024 //默认5M数据
+        const val DEFAULT_MEDIA_MEMORY_SIZE = 8 * 1024 * 1024 //默认8M数据
+        const val SHARED_MEMORY_DEFAULT_SIZE = 8 * 1024 * 1024 //默认8M数据
         fun builder() = Builder()
     }
 

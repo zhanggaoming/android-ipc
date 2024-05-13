@@ -55,10 +55,12 @@ internal class ServiceInvocationHandler(
 
                 val paramByteArray = requestParamJson.encodeToByteArray()
 
-                debugD("invoke requestParamJson byte size ->${paramByteArray.size}, content->$requestParamJson")
+                val parcelSize=ParcelSizeHelper.getStringParcelSize(requestParamJson)
+
+                debugD("invoke requestParamJson parcelSize ->${parcelSize}, content->$requestParamJson")
 
                 val response =
-                    if (paramByteArray.size < BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE) {//binder传输
+                    if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {//binder传输
 
                         synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
 

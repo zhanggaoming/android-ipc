@@ -5,7 +5,7 @@ import android.os.Process
 
 const val REQUEST_TYPE_CREATE = 1
 const val REQUEST_TYPE_INVOKE = 2
-const val BINDER_MAX_TRANSFORM_JSON_BYTE_ARRAY_SIZE = 510_000 //根据parcel序列化结合接口设计，最大能传输的json字节数据长度
+const val BINDER_MAX_TRANSFORM_PARCEL_SIZE = 600_000 //定义最大Parcel传输的size，理论是1M-8k，这里需要写小一点
 
 /**
  * 请求对象
