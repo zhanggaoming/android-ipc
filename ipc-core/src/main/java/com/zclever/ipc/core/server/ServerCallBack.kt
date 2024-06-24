@@ -1,5 +1,6 @@
 package com.zclever.ipc.core.server
 
+import android.os.DeadObjectException
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.GsonInstance
 import com.zclever.ipc.core.shared_memory.writeByteArray
@@ -22,23 +23,25 @@ internal class ServerCallBack(
 
         val dataJson = GsonInstance.toJson(data)
 
-        val parcelSize=ParcelSizeHelper.getStringParcelSize(dataJson)
+        val parcelSize = ParcelSizeHelper.getStringParcelSize(dataJson)
 
-        val dataJsonByteArray=dataJson.encodeToByteArray()
+        val dataJsonByteArray = dataJson.encodeToByteArray()
 
         debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJsonByteArray.size}，parcelSize->${parcelSize}")
 
-        if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {
-            debugD("onData use binder")
-            ServiceCache.remoteClients.getClientByPid(pid)
-                ?.onReceive(GsonInstance.toJson(CallbackResponse(callbackKey, dataJson)))
+        try {
 
-        } else {
-            debugD("onData use shared memory")
-            val sharedMemory = ServiceCache.serverCallbackMemoryMap[pid]!!
+            if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {
+                debugD("onData use binder")
+                ServiceCache.remoteClients.getClientByPid(pid)
+                    ?.onReceive(GsonInstance.toJson(CallbackResponse(callbackKey, dataJson)))
 
-            synchronized(sharedMemory) {
-                ServiceCache.remoteClients.getClientByPid(pid)?.onReceive(
+            } else {
+                debugD("onData use shared memory")
+                val sharedMemory = ServiceCache.serverCallbackMemoryMap[pid]!!
+
+                synchronized(sharedMemory) {
+                    ServiceCache.remoteClients.getClientByPid(pid)?.onReceive(
                         GsonInstance.toJson(
                             CallbackResponse(
                                 callbackKey,
@@ -48,7 +51,14 @@ internal class ServerCallBack(
                             )
                         )
                     )
+                }
             }
+
+        } catch (e: DeadObjectException) {
+            //无法保证客户端死亡了在这里已经通知到了服务端，所以这里直接try catch，如果客户端进程死亡，则忽略，相关内存会在客户端死亡回调里面释放
+            debugE("onData $pid process may be died")
         }
+
+
     }
 }
