@@ -87,4 +87,10 @@ object InfoServiceManager : InfoService {
             }))
         }
     }
+
+    override fun testBigData(a: Int, data: ByteArray, callBack: Result<ByteArray>) {
+
+        Log.i(TAG, "testBigData: data->${data.contentToString()}")
+
+    }
 }

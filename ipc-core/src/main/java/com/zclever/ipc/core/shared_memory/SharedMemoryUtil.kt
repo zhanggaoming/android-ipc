@@ -82,6 +82,12 @@ internal fun ParcelFileDescriptor.writeByteArray(data: ByteArray) = outputStream
     it.write(data)
 }
 
+internal fun ParcelFileDescriptor.readByteData(size: Int) =inputStream().use {inputStream ->
+    ByteArray(size).also {
+        inputStream.read(it)
+    }
+}
+
 
 //获取最接近的4K字节数
 internal fun Int.getNext4KMultiple(): Int {

@@ -20,5 +20,7 @@ internal object ClientCache {
 
     var serverResponseSharedMemory: ParcelFileDescriptor? = null//服务端创建的直接回复使用的共享内存映射的实例
 
+    var bigDataClientSharedMemory: AbstractSharedMemory? = null//客户端创建的用于传输bigdata的共享内存映射实例
+
 
 }

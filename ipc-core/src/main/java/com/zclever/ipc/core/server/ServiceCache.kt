@@ -23,6 +23,11 @@ internal object ServiceCache {
     val clientSharedMemoryMap: MutableMap<Int, ParcelFileDescriptor> =
         HashMap() //客户端创建的共享内存映射的实例pid=>ParcelFileDescriptor
 
+
+    val clientBigDataSharedMemoryMap: MutableMap<Int, ParcelFileDescriptor> =
+        HashMap() //客户端创建的bigdata共享内存映射的实例pid=>ParcelFileDescriptor
+
+
     val remoteClients: RemoteClientList<IClient> = RemoteClientList(
         serverCallbackMemoryMap,
         serverResponseMemoryMap,

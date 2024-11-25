@@ -77,7 +77,12 @@ class CommonActivity : AppCompatActivity() {
     fun sendBigData(view: View) {
 
         thread {
-            IpcManager.getService<InfoService>().sendBigData(bigByteArray)
+            //IpcManager.getService<InfoService>().sendBigData(bigByteArray)
+            IpcManager.getService<InfoService>().testBigData(1,bigByteArray,object : Result<ByteArray>() {
+                override fun onData(data: ByteArray) {
+
+                }
+            })
         }
 
     }

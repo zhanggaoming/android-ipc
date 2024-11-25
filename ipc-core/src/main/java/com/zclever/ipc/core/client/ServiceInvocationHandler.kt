@@ -1,5 +1,6 @@
 package com.zclever.ipc.core.client
 
+import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.shared_memory.readJsonStr
@@ -28,6 +29,12 @@ internal class ServiceInvocationHandler(
             try {
                 val signature = kotlinFunction.signature()
 
+                val bigDataIndex = kotlinFunction.bigDataIndex() - 1
+
+                val useBigData = bigDataIndex >= 0
+
+                var bigDataParamName = ""
+
                 val callbackInstance = if (args?.last() is Result<*>) {
                     ClientCache.dataCallback[signature] = args.last() as DataCallBack
                     true
@@ -35,14 +42,25 @@ internal class ServiceInvocationHandler(
                     false
                 }
 
+                debugD("invoke: args->${args.contentToString()},bigDataIndex->$bigDataIndex")
+
 
                 val paramValueMap =
                     kotlinFunction.parameters.filter { it.kind == KParameter.Kind.VALUE }
                         .mapIndexed { index, kParameter ->
-                            kParameter.name!! to if (callbackInstance && index == args!!.size - 1) "" else GsonInstance.toJson(
+                            if (index == bigDataIndex) {
+                                bigDataParamName = kParameter.name!!
+                            }
+                            kParameter.name!! to if ((callbackInstance && index == args!!.size - 1) || bigDataIndex == index) "" else GsonInstance.toJson(
                                 args!![index]
                             )
-                        }.toMap()
+                        }.toMap().toMutableMap()
+
+                if (useBigData) {
+                    val bigData = args!![bigDataIndex].safeAs<ByteArray>()!!
+                    paramValueMap[bigDataParamName] = bigData.size.toString()
+                    ClientCache.bigDataClientSharedMemory!!.writeByteArray(bigData)
+                }
 
                 val requestParamJson = GsonInstance.toJson(RequestParam(paramValueMap))
 
@@ -51,62 +69,35 @@ internal class ServiceInvocationHandler(
                     targetClazzName = targetClazzName,
                     functionKey = kotlinFunction.signature(),
                     callbackKey = if (callbackInstance) signature else "",
+                    useBigIndex = useBigData,
+                    bigIndexParamName = bigDataParamName
                 )
 
                 val paramByteArray = requestParamJson.encodeToByteArray()
 
-                val parcelSize=ParcelSizeHelper.getStringParcelSize(requestParamJson)
+                val parcelSize = ParcelSizeHelper.getStringParcelSize(requestParamJson)
 
                 debugD("invoke requestParamJson parcelSize ->${parcelSize}, content->$requestParamJson")
 
-                val response =
-                    if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {//binder传输
+                val response = if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {//binder传输
 
-                        synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
-
-                            var responseObj = GsonInstance.fromJson<Response>(
-                                connector.connect(
-                                    requestBase.toJson(),
-                                    requestParamJson
-                                )
-                            )
-
-                            if (responseObj.dataByteSize > 0) {
-                                Response(
-                                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
-                                        responseObj.dataByteSize
-                                    )
-                                )//服务端返回共享内存写入结果后，客户端再读
-                            } else {
-                                responseObj
-                            }
+                    if (useBigData) {
+                        synchronized(ClientCache.bigDataClientSharedMemory!!) {
+                            parseFromBinder(requestBase, requestParamJson)
                         }
-
-                    } else {//共享内存传输参数
-
-                        synchronized(ClientCache.serverResponseSharedMemory!!) { //保证同步
-
-                            ClientCache.clientSharedMemory!!.writeByteArray(paramByteArray) //把utf-8编码的字节数组写入共享内存区域
-
-                            val responseStr = connector.connect(             //写完共享内存通知服务端读取
-                                GsonInstance.toJson(requestBase.createNoParameterRequest(
-                                    paramByteArray.size
-                                ).apply { requestBase = this }), null
-                            )
-
-                            var responseObj = GsonInstance.fromJson<Response>(responseStr)
-
-                            if (responseObj.dataStr.isNullOrEmpty()) {
-                                Response(
-                                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
-                                        responseObj.dataByteSize
-                                    )
-                                )//服务端返回共享内存写入结果后，客户端再读
-                            } else {
-                                responseObj
-                            }
-                        }
+                    } else {
+                        parseFromBinder(requestBase, requestParamJson)
                     }
+                } else {//共享内存传输参数
+
+                    if (useBigData) {
+                        synchronized(ClientCache.bigDataClientSharedMemory!!) {
+                            parseFromSharedMemory(paramByteArray, requestBase)
+                        }
+                    } else {
+                        parseFromSharedMemory(paramByteArray, requestBase)
+                    }
+                }
 
                 if (kotlinFunction.returnType.classifier == Unit::class) {
                     GsonInstance.fromJson(
@@ -121,6 +112,61 @@ internal class ServiceInvocationHandler(
                 e.printStackTrace()
             }
 
+        }
+    }
+
+    private fun parseFromSharedMemory(
+        paramByteArray: ByteArray,
+        requestBase: RequestBase
+    ): Response {
+        var requestBase1 = requestBase
+        return synchronized(ClientCache.serverResponseSharedMemory!!) { //保证同步
+
+            ClientCache.clientSharedMemory!!.writeByteArray(paramByteArray) //把utf-8编码的字节数组写入共享内存区域
+
+            val responseStr = connector.connect(             //写完共享内存通知服务端读取
+                GsonInstance.toJson(
+                    requestBase1.createNoParameterRequest(
+                        paramByteArray.size
+                    ).apply { requestBase1 = this }), null
+            )
+
+            var responseObj = GsonInstance.fromJson<Response>(responseStr)
+
+            if (responseObj.dataStr.isNullOrEmpty()) {
+                Response(
+                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
+                        responseObj.dataByteSize
+                    )
+                )//服务端返回共享内存写入结果后，客户端再读
+            } else {
+                responseObj
+            }
+        }
+    }
+
+    private fun parseFromBinder(
+        requestBase: RequestBase,
+        requestParamJson: String?
+    ): Response {
+        return synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
+
+            var responseObj = GsonInstance.fromJson<Response>(
+                connector.connect(
+                    requestBase.toJson(),
+                    requestParamJson
+                )
+            )
+
+            if (responseObj.dataByteSize > 0) {
+                Response(
+                    ClientCache.serverResponseSharedMemory!!.readJsonStr(
+                        responseObj.dataByteSize
+                    )
+                )//服务端返回共享内存写入结果后，客户端再读
+            } else {
+                responseObj
+            }
         }
     }
 }

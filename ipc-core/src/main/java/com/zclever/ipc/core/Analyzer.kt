@@ -32,6 +32,8 @@ class Analyzer(private val interfaceClazz: KClass<*>) {
         }
             ?: throw IllegalAccessException("the annotation BindImpl is not be found in ${interfaceClazz.qualifiedName}!!")
 
+
+
     }
 
 

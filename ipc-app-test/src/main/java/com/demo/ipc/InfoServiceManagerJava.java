@@ -47,6 +47,11 @@ public class InfoServiceManagerJava implements InfoService {
 
     }
 
+    @Override
+    public void testBigData(int a, @NonNull byte[] data, @NonNull Result<byte[]> callBack) {
+
+    }
+
     private static final class Holder {
         private static final InfoServiceManagerJava instance = new InfoServiceManagerJava();
     }

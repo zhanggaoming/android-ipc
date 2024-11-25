@@ -18,6 +18,8 @@ data class RequestBase(
     val callbackKey: String = "", //异步回调实体的Map的key
     val transformType: TransformType = TransformType.BINDER,//传输方式
     val paramValueBytesLen: Int = 0, // 参值json序列化后的utf-8编码后的字节长度
+    val useBigIndex:Boolean=false,
+    val bigIndexParamName:String=""
 )
 
 

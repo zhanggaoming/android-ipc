@@ -10,6 +10,7 @@ import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.memoryfile.FileDescriptorWrapper
 import com.zclever.ipc.core.shared_memory.SharedMemoryFactory
+import com.zclever.ipc.core.shared_memory.readByteData
 import com.zclever.ipc.core.shared_memory.readJsonStr
 import com.zclever.ipc.core.shared_memory.writeByteArray
 import kotlin.reflect.KParameter
@@ -71,6 +72,12 @@ class ServiceCenter : Service() {
 
             debugD("server requestParamObj->${requestParamObj}")
 
+            var bigDataSize = 0
+
+            if (requestBase.useBigIndex) {
+                bigDataSize = requestParamObj.paramValueMap[requestBase.bigIndexParamName]!!.toInt()
+            }
+
 
             return ServiceCache.kFunctionMap[requestBase.targetClazzName]?.get(requestBase.functionKey)
                 ?.let { invokeFunction ->
@@ -87,10 +94,18 @@ class ServiceCenter : Service() {
                                     if (index == invokeFunction.parameters.size - 1 && resultCallBack != null) {
                                         resultCallBack //最后一个参数直接用我们构造的的回调对象给到服务端，服务端要返回给客户端必须要通过这个对象返回给客户端
                                     } else {
-                                        GsonInstance.fromJson<Any>(
-                                            requestParamObj.paramValueMap[kParameter.name],
-                                            kParameter.type
-                                        )
+
+                                        if (requestBase.useBigIndex && kParameter.name == requestBase.bigIndexParamName) {
+                                            ServiceCache.clientBigDataSharedMemoryMap[requestBase.pid]!!.readByteData(
+                                                bigDataSize
+                                            )
+                                        } else {
+
+                                            GsonInstance.fromJson<Any>(
+                                                requestParamObj.paramValueMap[kParameter.name],
+                                                kParameter.type
+                                            )
+                                        }
                                     }
                                 }
 
@@ -140,10 +155,12 @@ class ServiceCenter : Service() {
         }
 
         override fun exchangeSharedMemory(
-            clientPid: Int, clientFd: ParcelFileDescriptor
+            clientPid: Int,
+            clientFd: ParcelFileDescriptor,
+            bigDataFd: ParcelFileDescriptor
         ): FileDescriptorWrapper {
-
             ServiceCache.clientSharedMemoryMap[clientPid] = clientFd
+            ServiceCache.clientBigDataSharedMemoryMap[clientPid] = bigDataFd
 
             return FileDescriptorWrapper(SharedMemoryFactory.create(
                 "ServerResponse-$clientPid", IpcManager.config.sharedMemoryCapacity
@@ -156,8 +173,8 @@ class ServiceCenter : Service() {
                 ServiceCache.serverCallbackMemoryMap[clientPid] = it
                 it.parcelFileDescriptor
             })
-
         }
+
 
         override fun unregisterClient(client: IClient?) {
 

@@ -12,7 +12,7 @@ interface IConnector {
 
     void registerClient(IClient client,int clientPid);
 
-    FileDescriptorWrapper exchangeSharedMemory(int clientPid,in ParcelFileDescriptor fd);
+    FileDescriptorWrapper exchangeSharedMemory(int clientPid,in ParcelFileDescriptor fd,in ParcelFileDescriptor bigDataFd);
 
     void unregisterClient(IClient client);
 

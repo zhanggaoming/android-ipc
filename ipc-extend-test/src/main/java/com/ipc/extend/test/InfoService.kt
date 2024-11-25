@@ -1,6 +1,7 @@
 package com.ipc.extend.test
 
 
+import com.zclever.ipc.annotation.BigData
 import com.zclever.ipc.annotation.BindImpl
 import com.zclever.ipc.core.Result
 
@@ -26,6 +27,9 @@ interface InfoService {
     fun getBigByteArray(): ByteArray //获取服务端返回的超大数据
 
     fun asyncGetBigByteArray(callBack: Result<ByteArray>) //异步获取超大数据
+
+
+    fun testBigData(a:Int,@BigData data:ByteArray,callBack: Result<ByteArray>)
 }
 
 enum class Code {

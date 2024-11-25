@@ -169,9 +169,14 @@ object IpcManager {
             ClientCache.clientSharedMemory =
                 SharedMemoryFactory.create("Client-${Process.myPid()}", config.sharedMemoryCapacity)
 
+            ClientCache.bigDataClientSharedMemory =
+                SharedMemoryFactory.create("ClientBigData-${Process.myPid()}", config.sharedMemoryCapacity)
+
+            
             connector.exchangeSharedMemory(
                 Process.myPid(),
-                ClientCache.clientSharedMemory!!.parcelFileDescriptor
+                ClientCache.clientSharedMemory!!.parcelFileDescriptor,
+                ClientCache.bigDataClientSharedMemory!!.parcelFileDescriptor
             ).let {
                 ClientCache.serverResponseSharedMemory = it.responseFileDescriptor
                 ClientCache.serverCallbackSharedMemory = it.callbackFileDescriptor
