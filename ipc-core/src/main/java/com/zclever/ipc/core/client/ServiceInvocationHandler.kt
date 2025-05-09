@@ -1,6 +1,5 @@
 package com.zclever.ipc.core.client
 
-import android.util.Log
 import com.zclever.ipc.IConnector
 import com.zclever.ipc.core.*
 import com.zclever.ipc.core.shared_memory.readJsonStr
@@ -73,9 +72,13 @@ internal class ServiceInvocationHandler(
                     bigIndexParamName = bigDataParamName
                 )
 
-                val paramByteArray = requestParamJson.encodeToByteArray()
+                val requestBaseJson = requestBase.toJson()
 
-                val parcelSize = ParcelSizeHelper.getStringParcelSize(requestParamJson)
+
+                val parcelSize =
+                    ParcelSizeHelper.getStringParcelSize(requestBaseJson) + ParcelSizeHelper.getStringParcelSize(
+                        requestParamJson
+                    )
 
                 debugD("invoke requestParamJson parcelSize ->${parcelSize}, content->$requestParamJson")
 
@@ -83,12 +86,14 @@ internal class ServiceInvocationHandler(
 
                     if (useBigData) {
                         synchronized(ClientCache.bigDataClientSharedMemory!!) {
-                            parseFromBinder(requestBase, requestParamJson)
+                            parseFromBinder(requestBaseJson, requestParamJson)
                         }
                     } else {
-                        parseFromBinder(requestBase, requestParamJson)
+                        parseFromBinder(requestBaseJson, requestParamJson)
                     }
                 } else {//共享内存传输参数
+
+                    val paramByteArray = requestParamJson.encodeToByteArray()
 
                     if (useBigData) {
                         synchronized(ClientCache.bigDataClientSharedMemory!!) {
@@ -146,14 +151,14 @@ internal class ServiceInvocationHandler(
     }
 
     private fun parseFromBinder(
-        requestBase: RequestBase,
+        requestBaseJson: String,
         requestParamJson: String?
     ): Response {
         return synchronized(ClientCache.serverResponseSharedMemory!!) {//确保同步
 
             var responseObj = GsonInstance.fromJson<Response>(
                 connector.connect(
-                    requestBase.toJson(),
+                    requestBaseJson,
                     requestParamJson
                 )
             )

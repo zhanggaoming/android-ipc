@@ -115,15 +115,15 @@ class ServiceCenter : Service() {
 
                     val resultJson = invokeResult.toJson()
 
-                    val resultByteArray = resultJson.encodeToByteArray()
 
                     val parcelSize = ParcelSizeHelper.getStringParcelSize(resultJson)
 
                     if (parcelSize < BINDER_MAX_TRANSFORM_PARCEL_SIZE) {
-                        debugD("return use binder")
+                        debugD("return use binder parcelSize->${parcelSize}")
                         Response(resultJson).toJson()
                     } else {
-                        debugD("return use shared memory")
+                        debugD("return use shared memory parcelSize->${parcelSize}")
+                        val resultByteArray = resultJson.encodeToByteArray()
 
                         ServiceCache.serverResponseMemoryMap[requestBase.pid]!!.writeByteArray(
                             resultByteArray

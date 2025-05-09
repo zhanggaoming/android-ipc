@@ -5,7 +5,7 @@ import android.os.Process
 
 const val REQUEST_TYPE_CREATE = 1
 const val REQUEST_TYPE_INVOKE = 2
-const val BINDER_MAX_TRANSFORM_PARCEL_SIZE = 600_000 //定义最大Parcel传输的size，理论是1M-8k，这里需要写小一点
+const val BINDER_MAX_TRANSFORM_PARCEL_SIZE = 1_000_000 //定义最大Parcel传输的size，理论是1M-8k，这里需要写小一点,本身传输出去的结构体其他数据要占用一些
 
 /**
  * 请求对象

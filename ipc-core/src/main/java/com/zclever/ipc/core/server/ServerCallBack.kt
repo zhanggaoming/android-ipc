@@ -25,9 +25,8 @@ internal class ServerCallBack(
 
         val parcelSize = ParcelSizeHelper.getStringParcelSize(dataJson)
 
-        val dataJsonByteArray = dataJson.encodeToByteArray()
 
-        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，size->${dataJsonByteArray.size}，parcelSize->${parcelSize}")
+        debugD("onData: $callbackKey,-------${ServiceCache.remoteClients.getClientByPid(pid)}，parcelSize->${parcelSize}")
 
         try {
 
@@ -38,6 +37,7 @@ internal class ServerCallBack(
 
             } else {
                 debugD("onData use shared memory")
+                val dataJsonByteArray = dataJson.encodeToByteArray()
                 val sharedMemory = ServiceCache.serverCallbackMemoryMap[pid]!!
 
                 synchronized(sharedMemory) {
