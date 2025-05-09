@@ -1,10 +1,10 @@
 ## android-ipc
 这是一个在安卓平台上运行的ipc的库，让ipc通信更加简单。它具有以下特点：
 
-1. 支持自定义接口来实现跨进程通信，比传统的aidl的方式更简单
+1. 支持自定义接口来实现跨进程通信，比aidl的方式更简单
 2. 支持异步回调的方式返回数据，也支持设置监听器的方式
 3. 服务注册支持自动注册
-4. 突破binder驱动限制，支持大数据传输(已支持到最新版本Android14)
+4. 突破binder驱动缓冲区限制，支持大数据传输(已支持到最新版本Android15)
 
 ## 引入库
 
@@ -43,7 +43,7 @@ interface InfoService {
 
     fun sum(a: Int, b: Int, c: Int, result: Result<Int>)
 
-    fun sendBigData(@BigData data: ByteArray)
+    fun sendBigData(@BigData data: ByteArray)//传输二进制数据，建议使用BigData注解标记
 
     fun getEnum(code: Code): Code
 
